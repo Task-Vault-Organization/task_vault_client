@@ -1,10 +1,14 @@
 import './App.css'
-import {TestPage} from "./features/test/pages/TestPage.tsx";
-function App() {
+import { AlertList } from "./shared/components/Alerts/alert-list";
+import { NavigationMenu } from "./shared/layouts/Navigation/NavigationMenu";
+import {Outlet} from "react-router";
 
+function App() {
   return (
     <>
-        <TestPage />
+        <AlertList />
+        <NavigationMenu />
+        <Outlet />
     </>
   )
 }
