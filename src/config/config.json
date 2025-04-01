@@ -1,0 +1,4 @@
+{
+  "API_BASE_URL": "https://localhost:44368/api/",
+  "ALERTS_TIMEOUT": 5000
+}
