@@ -8,6 +8,7 @@ import {HomePage} from "./shared/pages/home-page";
 import {UnprotectedRoute} from "./shared/components/routing/unprotected-route";
 import {SignUp} from "./features/authentication/components/sign-up";
 import {Login} from "./features/authentication/components/login";
+import {MyFilesPage} from "./features/file-storage/pages/my-files-page";
 
 export const router = createBrowserRouter([
     {
@@ -17,7 +18,8 @@ export const router = createBrowserRouter([
             { index: true, element: <UnprotectedRoute><LandingPage /></UnprotectedRoute> },
             { path: "sign-up", element: <UnprotectedRoute><SignUp /></UnprotectedRoute> },
             { path: "login", element: <UnprotectedRoute><Login /></UnprotectedRoute> },
-            { path: 'home', element: (<ProtectedRoute><HomePage /></ProtectedRoute>) }
+            { path: 'home', element: (<ProtectedRoute><HomePage /></ProtectedRoute>) },
+            { path: 'files', element: (<ProtectedRoute><MyFilesPage /></ProtectedRoute>) }
         ],
     },
 ]);

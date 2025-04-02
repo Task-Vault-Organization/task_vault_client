@@ -8,7 +8,9 @@ function App() {
     <>
         <AlertList />
         <NavigationMenu />
-        <Outlet />
+        <div className={'p-10'}>
+            <Outlet />
+        </div>
     </>
   )
 }

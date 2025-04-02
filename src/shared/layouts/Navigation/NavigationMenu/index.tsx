@@ -7,7 +7,7 @@ import {AuthenticationService} from "../../../../features/authentication/service
 export const NavigationMenu: FC = () => {
     const isAuthenticated = useAuthenticationStore((state: AuthenticationState) => state.isAuthenticated);
     return (
-        <nav className="bg-blue-200 p-4 shadow-lg fixed w-max w-svw">
+        <nav className="bg-blue-200 p-4 shadow-lg w-max w-svw">
             <div className="container mx-auto flex justify-between items-center">
                 <div>
                     <NavLink to="/" className="text-white text-2xl font-extrabold tracking-wide drop-shadow-md">Home Page</NavLink>
@@ -16,6 +16,7 @@ export const NavigationMenu: FC = () => {
                     {
                         isAuthenticated ?
                             <>
+                                <NavLink to="/files" className="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-gray-200 transition-all">My files</NavLink>
                                 <button className="px-4 py-2 border border-white text-white rounded-lg hover:bg-white hover:text-blue-600 transition-all"
                                         onClick={AuthenticationService.logoutUser}
                                 >
