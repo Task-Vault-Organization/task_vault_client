@@ -1,6 +1,11 @@
 import {FC, FormEvent, useState} from "react";
 import {AuthenticateApiClient} from "../../../../api/clients/authenticate-api-client.ts";
 import {CreateUser} from "../../types/create-user.ts";
+import {Link} from "react-router";
+import {FaSignInAlt, FaUserPlus} from "react-icons/fa";
+import {TitleWithIcon} from "../../../../shared/components/reusable/title-with-icon";
+import {Button} from "../../../../shared/components/reusable/buttons/button";
+import {FormField} from "../../../../shared/components/forms/form-field";
 
 export const SignUp: FC = () => {
     const [email, setEmail] = useState("");
@@ -16,37 +21,43 @@ export const SignUp: FC = () => {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-600 to-purple-600 p-6">
-            <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-                <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Sign Up</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-gray-700">Email</label>
-                        <input
-                            type="email"
-                            className="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
+        <div className={'flex justify-center items-center min-h-[calc(100vh-5rem)] pt-20'}>
+            <div className="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
+                <div className="p-6 space-y-4 md:space-y-6 sm:p-8 bg-accent-1">
+                    <TitleWithIcon
+                        icon={FaUserPlus}
+                        text="Sign Up"
+                    />
+                    <form className="space-y-4 md:space-y-6" onSubmit={handleSubmit}>
+                        <FormField
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
+                            setValue={setEmail}
+                            labelText={'Your email'}
+                            type="email"
+                            name="email"
+                            id="email"
+                            placeholder="name@company.com"
                         />
-                    </div>
-                    <div>
-                        <label className="block text-gray-700">Password</label>
-                        <input
-                            type="password"
-                            className="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                        <FormField
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
+                            setValue={setPassword}
+                            labelText={'Password'}
+                            type="password"
+                            name="password"
+                            id="password"
+                            placeholder=". . . . . . . ."
                         />
-                    </div>
-                    <button
-                        type="submit"
-                        className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-all"
-                    >
-                        Sign Up
-                    </button>
-                </form>
+                        <div className="flex items-center justify-between">
+                            <a href="#" className="ml-auto text-sm font-medium text-text-primary hover:underline dark:text-primary-500">Forgot password?</a>
+                        </div>
+                        <Button fullWidth>
+                            Sign Up
+                        </Button>
+                        <p className="text-sm font-light text-text-primary">
+                            Already have an account? <Link to={'/login'} className="font-medium text-primary-600 hover:underline dark:text-primary-500">Log In</Link>
+                        </p>
+                    </form>
+                </div>
             </div>
         </div>
     );

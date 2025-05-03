@@ -22,7 +22,7 @@ export const AuthenticateApiClient = ((client: AxiosInstance, urlPath: string = 
     };
 
     const getUser = async (): Promise<GetUserResponse> => {
-        const response: AxiosResponse<AuthenticateUserResponse> =
+        const response: AxiosResponse<GetUserResponse> =
             await client.get(`${urlPath}you`);
         return response.data;
     };
