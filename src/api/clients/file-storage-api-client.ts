@@ -11,9 +11,22 @@ export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '
         return response.data;
     };
 
-    const downloadFile = async (fileId: string): Promise<any> => {
-        const response: AxiosResponse<any> =
-            await client.get(`${urlPath}download/${fileId}`);
+    const downloadFile = async (fileId: string): Promise<Blob> => {
+        const response: AxiosResponse<Blob> = await client.get(`${urlPath}download/${fileId}`, {
+            responseType: 'blob',
+        });
+        return response.data;
+    };
+
+    const uploadFile = async (file: File): Promise<any> => {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response: AxiosResponse<any> = await client.post(`${urlPath}upload`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
         return response.data;
     };
 
@@ -22,6 +35,7 @@ export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '
         ...ReadApiClient(client, urlPath),
         ...CrudApiClient(client, urlPath),
         getUploadedFiles,
-        downloadFile
+        downloadFile,
+        uploadFile
     };
 })(BaseApiClient, 'file-storage/');

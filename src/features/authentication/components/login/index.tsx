@@ -1,11 +1,12 @@
 import {FC, FormEvent, useState} from "react";
-import {CreateUser} from "../../types/create-user.ts";
-import {AuthenticateApiClient} from "../../../../api/clients/authenticate-api-client.ts";
 import {AuthenticateUser} from "../../types/authenticate-user.ts";
-import {AuthenticateUserResponse} from "../../types/authenticate-user-response.ts";
-import {showAlert} from "../../../../shared/helpers/alerts-helpers.ts";
-import {BaseApiResponse} from "../../../../shared/types/base-api-response.ts";
 import {AuthenticationService} from "../../services/authentication-service.ts";
+import {Link} from "react-router";
+import {FaSignInAlt} from "react-icons/fa";
+import {TitleWithIcon} from "../../../../shared/components/reusable/title-with-icon";
+import {Button} from "../../../../shared/components/reusable/buttons/button";
+import {FormField} from "../../../../shared/components/forms/form-field";
+import {InputValidatorFactory, InputValidatorTypes} from "../../../../shared/helpers/validation-helpers.ts";
 
 export const Login: FC = () => {
     const [email, setEmail] = useState("");
@@ -16,46 +17,52 @@ export const Login: FC = () => {
         const authenticateUser: AuthenticateUser = {
             email,
             password
-        }
+        };
         await AuthenticationService.authenticateUser(authenticateUser);
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-blue-600 to-purple-600 p-6">
-            <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-                <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Log In</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-gray-700">Email</label>
-                        <input
-                            type="email"
-                            className="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
+        <div className={'flex justify-center items-center min-h-[calc(100vh-5rem)] pt-20'}>
+            <div className="w-full bg-white rounded-lg shadow dark:border md:mt-0 sm:max-w-md xl:p-0 dark:bg-gray-800 dark:border-gray-700">
+                <div className="p-6 space-y-4 md:space-y-6 sm:p-8 bg-accent-1">
+                    <TitleWithIcon
+                        icon={FaSignInAlt}
+                        text="Log in to your account"
+                    />
+                    <form className="space-y-4 md:space-y-6" onSubmit={handleSubmit}>
+                        <FormField
                             value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
+                            setValue={setEmail}
+                            labelText={'Your email'}
+                            type="email"
+                            name="email"
+                            id="email"
+                            placeholder="name@company.com"
+                            validator={InputValidatorFactory.create(InputValidatorTypes.Email)}
                         />
-                    </div>
-                    <div>
-                        <label className="block text-gray-700">Password</label>
-                        <input
-                            type="password"
-                            className="w-full mt-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                        <FormField
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
+                            setValue={setPassword}
+                            labelText={'Password'}
+                            type="password"
+                            name="password"
+                            id="password"
+                            placeholder=". . . . . . . ."
                         />
-                    </div>
-                    <button
-                        type="submit"
-                        className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-all"
-                    >
-                        Log In
-                    </button>
-                    <button className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg shadow-sm hover:bg-gray-100 w-96">
-                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google Logo" className="w-5 h-5" />
-                            <span className="text-gray-700 font-medium">Sign in with Google</span>
-                    </button>
-                </form>
+                        <div className="flex items-center justify-between">
+                            <a href="#" className="ml-auto text-sm font-medium text-text-primary hover:underline dark:text-primary-500">Forgot password?</a>
+                        </div>
+                        <Button
+                            type={'submit'}
+                            fullWidth
+                        >
+                            Log In
+                        </Button>
+                        <p className="text-sm font-light text-text-primary">
+                            Don’t have an account yet? <Link to="/sign-up" className="font-medium text-primary-600 hover:underline dark:text-primary-500">Sign up</Link>
+                        </p>
+                    </form>
+                </div>
             </div>
         </div>
     );

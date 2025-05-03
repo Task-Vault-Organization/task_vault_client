@@ -1,6 +1,6 @@
-import './App.css'
+import './app.css'
 import { AlertList } from "./shared/components/Alerts/alert-list";
-import { NavigationMenu } from "./shared/layouts/Navigation/NavigationMenu";
+import { NavigationMenu } from "./shared/layouts/Navigation/navigation-menu";
 import {Outlet} from "react-router";
 
 function App() {
@@ -8,7 +8,7 @@ function App() {
     <>
         <AlertList />
         <NavigationMenu />
-        <div className={'p-10'}>
+        <div className={'pt-20'}>
             <Outlet />
         </div>
     </>

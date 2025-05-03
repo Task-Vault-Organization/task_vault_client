@@ -10,11 +10,15 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@cyntler/react-doc-viewer": "^1.17.0",
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
     "@react-router/dev": "^7.4.1",
     "@tailwindcss/vite": "^4.0.13",
+    "autoprefixer": "^10.4.21",
     "axios": "^1.8.4",
+    "lucide-react": "^0.486.0",
+    "postcss": "^8.5.3",
     "react": "^19.0.0",
     "react-doc-viewer": "^0.1.14",
     "react-dom": "^19.0.0",
