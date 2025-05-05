@@ -27,6 +27,47 @@
   line-height: 1.5;
 }
 
+input {
+  outline: none;
+}
+
+textarea {
+  outline: none;
+}
+
 .photo-viewer-container {
   width: 500px;
+}
+
+.react-datepicker__header {
+  background-color: #1f2937 !important;
+  border-bottom: 1px solid #374151 !important;
+}
+
+.react-datepicker__current-month,
+.react-datepicker-time__header,
+.react-datepicker__day-name {
+  color: #fff !important;
+}
+
+.react-datepicker__day {
+  color: #d1d5db !important;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  background-color: #3b82f6 !important;
+  color: #fff !important;
+}
+
+.react-datepicker__day:hover {
+  background-color: #2563eb !important;
+}
+
+.react-datepicker__input-container {
+  width: 100%;
+}
+
+.react-datepicker-wrapper {
+  width: 100%;
 }

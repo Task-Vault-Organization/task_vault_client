@@ -1,5 +1,5 @@
 import { FC } from "react";
-import { GetTask } from "../../types/get-task";
+import { GetTask } from "../../types/get-task.ts";
 import {TaskCard} from "../task-card";
 import { Button } from "../../../../shared/components/reusable/buttons/button";
 
@@ -58,7 +58,7 @@ export const TaskList: FC<TaskListProps> = ({
     return (
         <div className="space-y-4 py-4">
             {tasks.map((task) => (
-                <TaskCard key={task.id} task={task} onClick={() => onTaskClick(task.id)} />
+                <TaskCard key={task.id} task={task} onClick={() => onTaskClick(task.id)}  isOwnedTab={isOwnedTab} />
             ))}
             {isOwnedTab && (
                 <Button

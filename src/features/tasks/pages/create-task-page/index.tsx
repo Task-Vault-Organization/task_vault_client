@@ -1,21 +1,28 @@
 import { FC, useState } from "react";
 import { useNavigate } from "react-router";
-import { PlusIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { TrashIcon } from "@heroicons/react/24/outline";
+import ReactDatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+
 import { CreateTask } from "../../types/create-task.ts";
 import { CreateTaskItem } from "../../types/create-task-item.ts";
 import { TasksApiClient } from "../../../../api/clients/tasks-api-client.ts";
 import { BaseApiResponse } from "../../../../shared/types/base-api-response.ts";
 import { UsersApiClient } from "../../../../api/clients/user-api-client.ts";
-import { SearchUsers } from "../../../../shared/components/reusable/search/search-users";
+import {UserSearchField} from "../../../../shared/components/reusable/search/search-users";
 import { GetUser } from "../../../../shared/types/get-user.ts";
-import {UsersList} from "../../../../shared/components/reusable/users/users-list";
+import { UsersList } from "../../../../shared/components/reusable/users/users-list";
+import { Button } from "../../../../shared/components/reusable/buttons/button";
+import { FormField } from "../../../../shared/components/forms/form-field";
+import {TextAreaField} from "../../../../shared/components/forms/text-area-field";
+import { SelectField } from "../../../../shared/components/forms/select-field";
 
 const FILE_TYPES = [
-    { id: 1, name: "Text", extension: "txt", mimeType: "text/plain" },
-    { id: 2, name: "JPEG Image", extension: "jpg", mimeType: "image/jpeg" },
-    { id: 3, name: "PNG Image", extension: "png", mimeType: "image/png" },
-    { id: 4, name: "GIF Image", extension: "gif", mimeType: "image/gif" },
-    { id: 5, name: "PDF Document", extension: "pdf", mimeType: "application/pdf" },
+    { id: 1, name: "Text", extension: "txt" },
+    { id: 2, name: "JPEG Image", extension: "jpg" },
+    { id: 3, name: "PNG Image", extension: "png" },
+    { id: 4, name: "GIF Image", extension: "gif" },
+    { id: 5, name: "PDF Document", extension: "pdf" },
 ];
 
 const FILE_CATEGORIES = [
@@ -34,21 +41,13 @@ export const CreateTaskPage: FC = () => {
         taskItems: [],
         assigneesIds: null,
     });
+
     const [selectedUsers, setSelectedUsers] = useState<GetUser[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setTask(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setTask(prev => ({ ...prev, deadlineAt: e.target.value ? new Date(e.target.value) : null }));
-    };
-
     const addTaskItem = () => {
-        setTask(prev => ({
+        setTask((prev) => ({
             ...prev,
             taskItems: [
                 ...prev.taskItems,
@@ -56,14 +55,14 @@ export const CreateTaskPage: FC = () => {
                     title: "",
                     description: null,
                     fileTypeId: 1,
-                    fileCategoryId: 1
+                    fileCategoryId: 1,
                 },
             ],
         }));
     };
 
     const removeTaskItem = (index: number) => {
-        setTask(prev => ({
+        setTask((prev) => ({
             ...prev,
             taskItems: prev.taskItems.filter((_, i) => i !== index),
         }));
@@ -74,7 +73,7 @@ export const CreateTaskPage: FC = () => {
         field: keyof CreateTaskItem,
         value: string | number
     ) => {
-        setTask(prev => {
+        setTask((prev) => {
             const updatedItems = [...prev.taskItems];
             updatedItems[index] = { ...updatedItems[index], [field]: value };
             return { ...prev, taskItems: updatedItems };
@@ -82,13 +81,13 @@ export const CreateTaskPage: FC = () => {
     };
 
     const handleUserSelect = (user: GetUser) => {
-        if (!selectedUsers.some(u => u.id === user.id)) {
-            setSelectedUsers(prev => [...prev, user]);
+        if (!selectedUsers.some((u) => u.id === user.id)) {
+            setSelectedUsers((prev) => [...prev, user]);
         }
     };
 
     const handleRemoveUser = (userId: string) => {
-        setSelectedUsers(prev => prev.filter(user => user.id !== userId));
+        setSelectedUsers((prev) => prev.filter((user) => user.id !== userId));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -97,31 +96,20 @@ export const CreateTaskPage: FC = () => {
         setError(null);
 
         try {
-            if (!task.title.trim()) {
-                throw new Error("Task title is required");
-            }
-
-            if (task.taskItems.length === 0) {
-                throw new Error("At least one task item is required");
-            }
-
+            if (!task.title.trim()) throw new Error("Task title is required");
+            if (task.taskItems.length === 0) throw new Error("At least one task item is required");
             for (const item of task.taskItems) {
-                if (!item.title.trim()) {
-                    throw new Error("All task items must have a title");
-                }
+                if (!item.title.trim()) throw new Error("All task items must have a title");
             }
 
             const taskToSubmit = {
                 ...task,
-                assigneesIds: selectedUsers.map(user => user.id)
+                assigneesIds: selectedUsers.map((user) => user.id),
             };
 
             const response: BaseApiResponse = await TasksApiClient.createTask(taskToSubmit);
-            if (response) {
-                navigate("/tasks");
-            } else {
-                throw new Error(response.message || "Failed to create task");
-            }
+            if (response) navigate("/tasks");
+            else throw new Error(response.message || "Failed to create task");
         } catch (err) {
             setError(err instanceof Error ? err.message : "An unknown error occurred");
         } finally {
@@ -130,168 +118,109 @@ export const CreateTaskPage: FC = () => {
     };
 
     return (
-        <div className="max-w-3xl mx-auto mt-8 shadow-xl rounded-2xl p-6 border border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-200 mb-6">Create New Task</h1>
+        <div className="mx-auto space-y-6 mb-10 max-w-3xl">
+            <h2 className="text-2xl font-semibold text-center text-white">Create a New Task</h2>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-4">
-                    <div>
-                        <label htmlFor="title" className="block text-sm font-medium text-gray-200 mb-1">
-                            Task Title *
-                        </label>
-                        <input
-                            type="text"
-                            id="title"
-                            name="title"
-                            value={task.title}
-                            onChange={handleInputChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                            required
-                        />
-                    </div>
+            <form onSubmit={handleSubmit} className="space-y-6 px-4">
+                <FormField
+                    value={task.title}
+                    setValue={(val) => setTask((prev) => ({ ...prev, title: val }))}
+                    labelText="Task Title"
+                    placeholder="Enter task title"
+                />
 
-                    <div>
-                        <label htmlFor="description" className="block text-sm font-medium text-gray-200 mb-1">
-                            Description
-                        </label>
-                        <textarea
-                            id="description"
-                            name="description"
-                            value={task.description}
-                            onChange={handleInputChange}
-                            rows={3}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                        />
-                    </div>
+                <TextAreaField
+                    value={task.description || ""}
+                    setValue={(val) => setTask((prev) => ({ ...prev, description: val }))}
+                    labelText="Description"
+                    placeholder="Enter task description"
+                />
 
-                    <div>
-                        <label htmlFor="deadlineAt" className="block text-sm font-medium text-gray-200 mb-1">
-                            Deadline
-                        </label>
-                        <input
-                            type="datetime-local"
-                            id="deadlineAt"
-                            name="deadlineAt"
-                            onChange={handleDateChange}
-                            className="text-gray-200 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                        />
-                    </div>
+                <div className="space-y-1">
+                    <label className="block text-sm font-medium text-white mb-1">Deadline</label>
+                    <ReactDatePicker
+                        selected={task.deadlineAt}
+                        onChange={(date: Date | null) => setTask((prev) => ({ ...prev, deadlineAt: date }))}
+                        dateFormat="MMM d, yyyy"
+                        placeholderText="Select a deadline"
+                        className="w-full p-2.5 rounded-lg bg-gray-800 border border-gray-600 text-white focus:ring-blue-500 focus:border-blue-500"
+                        calendarClassName="!bg-gray-800 !border-gray-700 !text-white"
+                        popperClassName="z-50"
+                    />
                 </div>
 
-                <div className="py-4">
-                    <SearchUsers
-                        onUserSelect={handleUserSelect}
-                        apiClient={UsersApiClient}
-                        placeholder="Find a user..."
-                        className="mb-2"
-                    />
-                    <div className={"py-3"}>
-                        <UsersList
-                            users={selectedUsers}
-                            onRemoveUser={handleRemoveUser}
-                        />
+                <div className="space-y-2">
+                    <label className="block text-sm font-medium text-white mb-1">Assignees</label>
+                    <div className="relative">
+                        <UserSearchField onUserSelect={handleUserSelect} />
+                    </div>
+                    <div className={"my-5"}>
+                        <UsersList users={selectedUsers} onRemoveUser={handleRemoveUser}  userRemovable={true}/>
                     </div>
                 </div>
 
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                        <h2 className="text-lg font-semibold text-gray-200">Task Items</h2>
-                        <button
-                            type="button"
-                            onClick={addTaskItem}
-                            className="flex items-center space-x-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                            <PlusIcon className="h-4 w-4" />
-                            <span>Add Item</span>
-                        </button>
+                        <h3 className="text-lg font-semibold text-white">Task Items</h3>
+                        <Button type="button" onClick={addTaskItem}>
+                            + Add Item
+                        </Button>
                     </div>
 
                     {task.taskItems.length === 0 ? (
-                        <div className="text-center py-4 text-gray-500">
-                            No task items added yet. Click "Add Item" to create one.
+                        <div className="text-center text-gray-400 py-4">
+                            No task items yet. Click “Add Item” to begin.
                         </div>
                     ) : (
                         <div className="space-y-4">
                             {task.taskItems.map((item, index) => (
-                                <div key={index} className="p-4 border border-gray-200 rounded-lg bg-accent-1">
+                                <div key={index} className="bg-gray-800 py-5 px-6 rounded-lg text-white shadow-md">
                                     <div className="flex justify-between items-start mb-3">
-                                        <h3 className="font-medium text-gray-200">Item #{index + 1}</h3>
+                                        <h4 className="font-semibold">Item #{index + 1}</h4>
                                         <button
                                             type="button"
                                             onClick={() => removeTaskItem(index)}
-                                            className="text-red-500 hover:text-red-700"
+                                            className="text-red-400 hover:text-red-600"
                                             title="Remove item"
                                         >
                                             <TrashIcon className="h-5 w-5" />
                                         </button>
                                     </div>
 
-                                    <div className="space-y-3">
-                                        <div>
-                                            <label htmlFor={`item-title-${index}`} className="block text-sm font-medium text-gray-200 mb-1">
-                                                Item Title *
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id={`item-title-${index}`}
-                                                value={item.title}
-                                                onChange={(e) => handleTaskItemChange(index, "title", e.target.value)}
-                                                className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                                required
-                                            />
-                                        </div>
-                                        <div>
-                                            <label htmlFor={`item-description-${index}`} className="block text-sm font-medium text-gray-200 mb-1">
-                                                Description
-                                            </label>
-                                            <textarea
-                                                id={`item-description-${index}`}
-                                                value={item.description || ""}
-                                                onChange={(e) => handleTaskItemChange(index, "description", e.target.value)}
-                                                rows={2}
-                                                className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                            />
-                                        </div>
+                                    <FormField
+                                        value={item.title}
+                                        setValue={(val) => handleTaskItemChange(index, "title", val)}
+                                        labelText="Item Title"
+                                        placeholder="Enter item title"
+                                    />
 
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label htmlFor={`item-fileType-${index}`} className="block text-sm font-medium text-gray-200 mb-1">
-                                                    File Type *
-                                                </label>
-                                                <select
-                                                    id={`item-fileType-${index}`}
-                                                    value={item.fileTypeId}
-                                                    onChange={(e) => handleTaskItemChange(index, "fileTypeId", parseInt(e.target.value))}
-                                                    className="text-gray-200 w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                                    required
-                                                >
-                                                    {FILE_TYPES.map((type) => (
-                                                        <option className={"text-gray-800"} key={type.id} value={type.id}>
-                                                            {type.name} ({type.extension})
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
+                                    <TextAreaField
+                                        value={item.description || ""}
+                                        setValue={(val) => handleTaskItemChange(index, "description", val)}
+                                        labelText="Description"
+                                        placeholder="Enter item description"
+                                        rows={2}
+                                    />
 
-                                            <div>
-                                                <label htmlFor={`item-fileCategory-${index}`} className="block text-sm font-medium text-gray-200 mb-1">
-                                                    File Category *
-                                                </label>
-                                                <select
-                                                    id={`item-fileCategory-${index}`}
-                                                    value={item.fileCategoryId}
-                                                    onChange={(e) => handleTaskItemChange(index, "fileCategoryId", parseInt(e.target.value))}
-                                                    className="text-gray-200 w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                                    required
-                                                >
-                                                    {FILE_CATEGORIES.map((category) => (
-                                                        <option className={"text-gray-800"} key={category.id} value={category.id}>
-                                                            {category.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                        </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <SelectField
+                                            labelText="File Type"
+                                            options={FILE_TYPES.map(({ id, name, extension }) => ({
+                                                id,
+                                                name: `${name} (${extension})`,
+                                            }))}
+                                            value={item.fileTypeId}
+                                            setValue={(val) => handleTaskItemChange(index, "fileTypeId", val)}
+                                            placeholder="Select file type"
+                                        />
+
+                                        <SelectField
+                                            labelText="File Category"
+                                            options={FILE_CATEGORIES}
+                                            value={item.fileCategoryId}
+                                            setValue={(val) => handleTaskItemChange(index, "fileCategoryId", val)}
+                                            placeholder="Select file category"
+                                        />
                                     </div>
                                 </div>
                             ))}
@@ -299,28 +228,13 @@ export const CreateTaskPage: FC = () => {
                     )}
                 </div>
 
-                {error && (
-                    <div className="p-3 bg-red-100 text-red-500 rounded-lg">
-                        {error}
-                    </div>
-                )}
+                {error && <div className="p-3 bg-red-100 text-red-600 rounded-lg">{error}</div>}
 
-                <div className="flex justify-end space-x-3 pt-4">
-                    <button
-                        type="button"
-                        onClick={() => navigate("/tasks")}
-                        className="px-4 py-2 border border-gray-300 rounded-lg text-gray-200 hover:bg-gray-50 transition-colors"
-                        disabled={isSubmitting}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                        disabled={isSubmitting}
-                    >
+                <div className="flex justify-end gap-4 pt-4">
+                    <Button type="button" onClick={() => navigate("/tasks")}>Cancel</Button>
+                    <Button type="submit" disabled={isSubmitting}>
                         {isSubmitting ? "Creating..." : "Create Task"}
-                    </button>
+                    </Button>
                 </div>
             </form>
         </div>

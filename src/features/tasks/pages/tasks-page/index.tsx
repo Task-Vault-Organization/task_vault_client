@@ -1,11 +1,11 @@
 import { FC, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { GetTask } from "../types/get-task";
-import { TasksApiClient } from "../../../api/clients/tasks-api-client";
-import {TaskTabs} from "./task-tabs";
-import {TaskList} from "./task-list";
+import { GetTask } from "../../types/get-task.ts";
+import { TasksApiClient } from "../../../../api/clients/tasks-api-client.ts";
+import {TaskTabs} from "../../components/task-tabs";
+import {TaskList} from "../../components/task-list";
 
-export const TaskPage: FC = () => {
+export const TasksPage: FC = () => {
     const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState<"owned" | "assigned">("owned");
     const [ownedTasks, setOwnedTasks] = useState<GetTask[]>([]);

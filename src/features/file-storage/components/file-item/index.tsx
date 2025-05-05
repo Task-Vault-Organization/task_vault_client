@@ -3,7 +3,7 @@ import { GetFile } from "../../types/get-file.ts";
 import { FileIcon, defaultStyles } from 'react-file-icon';
 import { FiDownload, FiShare2, FiMoreVertical } from 'react-icons/fi';
 import {getFileExtension} from "../../../../shared/helpers/file-helpers.ts";
-import {FileViewerModal} from "../../../../shared/components/modals/file-viewer-modal.tsx";
+import {FileViewerModal} from "../../../../shared/components/modals/file-viewer-modal";
 
 interface FileItemProps {
     file: GetFile;

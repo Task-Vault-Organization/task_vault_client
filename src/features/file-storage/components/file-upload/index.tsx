@@ -4,7 +4,14 @@ import { FileStorageApiClient } from "../../../../api/clients/file-storage-api-c
 import { showAlert } from "../../../../shared/helpers/alerts-helpers.ts";
 import { Button } from "../../../../shared/components/reusable/buttons/button";
 
-export function FileUpload({ setLoading }) {
+interface FileUploadProps {
+    setLoading?: (loading: boolean) => void;
+    onSuccess?: () => void;
+    onError?: (error: unknown) => void;
+    className?: string;
+}
+
+export function FileUpload({ setLoading, onSuccess, onError, className = "" }: FileUploadProps) {
     const [file, setFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
     const [message, setMessage] = useState("");
@@ -42,22 +49,27 @@ export function FileUpload({ setLoading }) {
 
         setUploading(true);
         setMessage("");
+        setLoading?.(true);
 
         try {
             await FileStorageApiClient.uploadFile(file);
             setMessage("File uploaded successfully!");
-            showAlert('success', "File uploaded successfully!");
+            showAlert("success", "File uploaded successfully!");
             setFile(null);
-            setLoading(true);
+            onSuccess?.();
         } catch (error) {
             setMessage("File upload failed. Please try again.");
+            onError?.(error);
         } finally {
             setUploading(false);
+            setLoading?.(false);
         }
     };
 
     return (
-        <div className="flex flex-col items-center gap-5 px-4 py-4 text-white border rounded-lg shadow-md bg-accent-2">
+        <div
+            className={`flex flex-col items-center gap-5 px-4 py-4 text-white border rounded-lg shadow-md bg-accent-2 ${className}`}
+        >
             <input type="file" onChange={handleFileChange} className="hidden" id="file-upload" />
             <label
                 htmlFor="file-upload"
@@ -65,7 +77,7 @@ export function FileUpload({ setLoading }) {
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 className={`cursor-pointer flex flex-col items-center p-4 border-2 border-dashed rounded-xl w-full text-center transition-all duration-200 ${
-                    isDragOver ? 'border-blue-400 bg-blue-900/20 scale-105' : 'border-gray-400'
+                    isDragOver ? "border-blue-400 bg-blue-900/20 scale-105" : "border-gray-400"
                 }`}
             >
                 <UploadCloud className="w-10 h-10 text-gray-200" />
@@ -73,11 +85,16 @@ export function FileUpload({ setLoading }) {
                     {isDragOver ? "Drop the file here" : "Click or drag a file here to upload"}
                 </span>
             </label>
-            {file && <p className="text-sm text-gray-200">Selected file: {file.name}</p>}
-            <Button onClick={handleUpload} disabled={uploading}>
+
+            {file && (
+                <p className="text-sm text-gray-200 truncate w-full text-center">Selected file: {file.name}</p>
+            )}
+
+            <Button onClick={handleUpload} disabled={uploading} className="w-full max-w-xs">
                 {uploading ? "Uploading..." : "Upload File"}
             </Button>
-            {message && <p className="text-sm text-gray-200">{message}</p>}
+
+            {message && <p className="text-sm text-gray-200 text-center">{message}</p>}
         </div>
     );
 }

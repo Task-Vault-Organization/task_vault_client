@@ -9,8 +9,9 @@ import {UnprotectedRoute} from "./shared/components/routing/unprotected-route";
 import {SignUp} from "./features/authentication/components/sign-up";
 import {Login} from "./features/authentication/components/login";
 import {MyFilesPage} from "./features/file-storage/pages/my-files-page";
-import {TaskPage} from "./features/tasks/pages/tasks-page.tsx";
+import {TasksPage} from "./features/tasks/pages/tasks-page";
 import {CreateTaskPage} from "./features/tasks/pages/create-task-page";
+import {TaskPage} from "./features/tasks/pages/task-page";
 
 export const router = createBrowserRouter([
     {
@@ -22,8 +23,9 @@ export const router = createBrowserRouter([
             { path: "login", element: <UnprotectedRoute><Login /></UnprotectedRoute> },
             { path: 'home', element: (<ProtectedRoute><HomePage /></ProtectedRoute>) },
             { path: 'files', element: (<ProtectedRoute><MyFilesPage /></ProtectedRoute>) },
-            { path: 'tasks', element: (<ProtectedRoute><TaskPage /></ProtectedRoute>) },
-            { path: 'task/new', element: (<ProtectedRoute><CreateTaskPage /></ProtectedRoute>) }
+            { path: 'tasks', element: (<ProtectedRoute><TasksPage /></ProtectedRoute>) },
+            {path: 'task/new', element: (<ProtectedRoute><CreateTaskPage /></ProtectedRoute>) },
+            {path: 'task/:taskId', element: (<ProtectedRoute><TaskPage /></ProtectedRoute>) }
         ],
     },
 ]);

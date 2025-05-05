@@ -1,20 +1,14 @@
-import { FC, useState, useEffect, useCallback } from "react";
+import { FC, useCallback, useEffect, useState } from "react";
 import {GetUser} from "../../../../types/get-user.ts";
 import {UsersApiClient} from "../../../../../api/clients/user-api-client.ts";
 
-interface SearchUsersProps {
-    onUserSelect?: (user: GetUser) => void;
-    apiClient: typeof UsersApiClient;
+interface Props {
+    onUserSelect: (user: GetUser) => void;
     placeholder?: string;
-    className?: string;
 }
 
-export const SearchUsers: FC<SearchUsersProps> = ({
-     onUserSelect,
-     apiClient,
-     placeholder = "Search users...",
-     className = ""}) => {
-    const [searchTerm, setSearchTerm] = useState("");
+export const UserSearchField: FC<Props> = ({ onUserSelect, placeholder = "Search users..." }) => {
+    const [query, setQuery] = useState("");
     const [results, setResults] = useState<GetUser[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -30,92 +24,78 @@ export const SearchUsers: FC<SearchUsersProps> = ({
 
             try {
                 setIsLoading(true);
-                const response = await apiClient.searchUsers(term);
-                setResults(response.users);
+                const response = await UsersApiClient.searchUsers(term);
+                setResults(response.users || []);
                 setError(null);
             } catch (err) {
                 setError("Failed to fetch users");
-                setResults([]);
             } finally {
                 setIsLoading(false);
             }
-        }, 1000),
+        }, 500),
         []
     );
 
     useEffect(() => {
-        debouncedSearch(searchTerm);
-    }, [searchTerm, debouncedSearch]);
+        debouncedSearch(query);
+    }, [query, debouncedSearch]);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchTerm(e.target.value);
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setQuery(e.target.value);
         setShowResults(true);
     };
 
-    const handleUserSelect = (user: GetUser) => {
-        // Removed: setSearchTerm(user.email);
+    const handleSelect = (user: GetUser) => {
+        onUserSelect(user);
+        setQuery("");
+        setResults([]);
         setShowResults(false);
-        onUserSelect?.(user);
     };
 
     const handleBlur = () => {
-        setTimeout(() => setShowResults(false), 200);
+        setTimeout(() => setShowResults(false), 200); // wait for click to register
     };
 
     return (
-        <div className={`relative ${className}`}>
-            <div className="relative">
-                <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={handleInputChange}
-                    onFocus={() => setShowResults(true)}
-                    onBlur={handleBlur}
-                    placeholder={placeholder}
-                    className="w-full p-2 border border-gray-200 text-gray-200 rounded-md"
-                />
-                {isLoading && (
-                    <div className="absolute right-3 top-2.5">
-                        <LoadingSpinner />
-                    </div>
-                )}
-            </div>
+        <div className="relative w-full">
+            <input
+                type="text"
+                value={query}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                onFocus={() => setShowResults(true)}
+                placeholder={placeholder}
+                className="w-full p-2.5 rounded-lg bg-gray-800 border border-gray-600 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-500"
+            />
 
-            {showResults && (results.length > 0 || error) && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
-                    {error ? (
-                        <div className="p-2 text-red-500">{error}</div>
-                    ) : (
-                        <ul className="py-1">
-                            {results.map((user) => (
-                                <li
-                                    key={user.id}
-                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                                    onClick={() => handleUserSelect(user)}
-                                >
-                                    {user.email}
-                                </li>
-                            ))}
-                        </ul>
+            {showResults && (
+                <div className="absolute z-50 mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg shadow-lg overflow-hidden">
+                    {isLoading && <div className="p-2 text-sm text-gray-400">Searching...</div>}
+                    {error && <div className="p-2 text-sm text-red-400">{error}</div>}
+                    {!isLoading && results.length === 0 && query && (
+                        <div className="p-2 text-sm text-gray-400">No users found.</div>
                     )}
+                    <ul>
+                        {results.map((user) => (
+                            <li
+                                key={user.id}
+                                className="p-2 text-sm text-white hover:bg-blue-600 cursor-pointer transition-colors"
+                                onClick={() => handleSelect(user)}
+                            >
+                                {user.email}
+                            </li>
+                        ))}
+                    </ul>
                 </div>
             )}
         </div>
     );
 };
 
-const LoadingSpinner: FC = () => {
-    return (
-        <div className="flex items-center justify-center">
-            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-        </div>
-    );
-};
-
-function debounce<T extends (...args: any[]) => any>(func: T, wait: number) {
+function debounce<T extends (...args: any[]) => void>(func: T, wait: number) {
     let timeout: NodeJS.Timeout;
-    return function (this: any, ...args) {
+    return function (...args) {
         clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
+        timeout = setTimeout(() => func(...args), wait);
     };
 }
