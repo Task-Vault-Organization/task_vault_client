@@ -26,8 +26,8 @@ export const FileItem: FC<FileItemProps> = ({ file }) => {
     return (
         <div
             onDoubleClick={() => setOpen(true)}
-            className="flex items-center gap-6 p-6 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white border rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out hover:bg-gradient-to-r hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 cursor-pointer">
-            <div className="flex-shrink-0 w-12 h-12">
+            className="py-4 px-4 group flex items-center gap-6 text-white bg-accent-1 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 cursor-pointer transition-all duration-1000 ease-in-out">
+            <div className="w-10 h-10 mb-2">
                 <FileIcon
                     extension={fileExtension}
                     {...defaultStyles[fileExtension as keyof typeof defaultStyles]}
@@ -36,8 +36,8 @@ export const FileItem: FC<FileItemProps> = ({ file }) => {
             </div>
 
             <div className="flex-grow min-w-0">
-                <p className="font-medium text-gray-900 truncate">{file.name}</p>
-                <div className="flex flex-wrap items-center gap-x-4 text-sm text-gray-500">
+                <p className="font-medium truncate">{file.name}</p>
+                <div className="flex flex-wrap items-center gap-x-4 text-sm text-gray-400 group-hover:text-gray-200">
                     <span>{formattedSize}</span>
                     <span>•</span>
                     <span className="truncate">{file.uploader?.email || "Unknown"}</span>
@@ -47,13 +47,13 @@ export const FileItem: FC<FileItemProps> = ({ file }) => {
             </div>
 
             <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                <button className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full">
+                <button className="p-2 text-gray-200 hover:text-blue-600 hover:bg-blue-50 rounded-full">
                     <FiDownload size={18} />
                 </button>
-                <button className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full">
+                <button className="p-2 text-gray-200 hover:text-blue-600 hover:bg-blue-50 rounded-full">
                     <FiShare2 size={18} />
                 </button>
-                <button className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full">
+                <button className="p-2 text-gray-200 hover:text-blue-600 hover:bg-blue-50 rounded-full">
                     <FiMoreVertical size={18} />
                 </button>
             </div>

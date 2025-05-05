@@ -1,10 +1,14 @@
 import { FC, useState } from "react";
 import { useNavigate } from "react-router";
-import { PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
-import {CreateTask} from "../../types/create-task.ts";
-import {CreateTaskItem} from "../../types/create-task-item.ts";
-import {TasksApiClient} from "../../../../api/clients/tasks-api-client.ts";
-import {BaseApiResponse} from "../../../../shared/types/base-api-response.ts";
+import { PlusIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { CreateTask } from "../../types/create-task.ts";
+import { CreateTaskItem } from "../../types/create-task-item.ts";
+import { TasksApiClient } from "../../../../api/clients/tasks-api-client.ts";
+import { BaseApiResponse } from "../../../../shared/types/base-api-response.ts";
+import { UsersApiClient } from "../../../../api/clients/user-api-client.ts";
+import { SearchUsers } from "../../../../shared/components/reusable/search/search-users";
+import { GetUser } from "../../../../shared/types/get-user.ts";
+import {UsersList} from "../../../../shared/components/reusable/users/users-list";
 
 const FILE_TYPES = [
     { id: 1, name: "Text", extension: "txt", mimeType: "text/plain" },
@@ -30,6 +34,7 @@ export const CreateTaskPage: FC = () => {
         taskItems: [],
         assigneesIds: null,
     });
+    const [selectedUsers, setSelectedUsers] = useState<GetUser[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -50,8 +55,8 @@ export const CreateTaskPage: FC = () => {
                 {
                     title: "",
                     description: null,
-                    fileTypeId: 1, // Default to text
-                    fileCategoryId: 1, // Default to first category
+                    fileTypeId: 1,
+                    fileCategoryId: 1
                 },
             ],
         }));
@@ -76,13 +81,22 @@ export const CreateTaskPage: FC = () => {
         });
     };
 
+    const handleUserSelect = (user: GetUser) => {
+        if (!selectedUsers.some(u => u.id === user.id)) {
+            setSelectedUsers(prev => [...prev, user]);
+        }
+    };
+
+    const handleRemoveUser = (userId: string) => {
+        setSelectedUsers(prev => prev.filter(user => user.id !== userId));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
         setError(null);
 
         try {
-            // Basic validation
             if (!task.title.trim()) {
                 throw new Error("Task title is required");
             }
@@ -97,9 +111,14 @@ export const CreateTaskPage: FC = () => {
                 }
             }
 
-            const response: BaseApiResponse = await TasksApiClient.createTask(task);
+            const taskToSubmit = {
+                ...task,
+                assigneesIds: selectedUsers.map(user => user.id)
+            };
+
+            const response: BaseApiResponse = await TasksApiClient.createTask(taskToSubmit);
             if (response) {
-                navigate("/tasks"); // Redirect to tasks page after creation
+                navigate("/tasks");
             } else {
                 throw new Error(response.message || "Failed to create task");
             }
@@ -111,13 +130,13 @@ export const CreateTaskPage: FC = () => {
     };
 
     return (
-        <div className="max-w-3xl mx-auto mt-8 bg-white shadow-xl rounded-2xl p-6 border border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-800 mb-6">Create New Task</h1>
+        <div className="max-w-3xl mx-auto mt-8 shadow-xl rounded-2xl p-6 border border-gray-200">
+            <h1 className="text-2xl font-bold text-gray-200 mb-6">Create New Task</h1>
 
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-4">
                     <div>
-                        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                        <label htmlFor="title" className="block text-sm font-medium text-gray-200 mb-1">
                             Task Title *
                         </label>
                         <input
@@ -127,13 +146,12 @@ export const CreateTaskPage: FC = () => {
                             value={task.title}
                             onChange={handleInputChange}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Enter task title"
                             required
                         />
                     </div>
 
                     <div>
-                        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                        <label htmlFor="description" className="block text-sm font-medium text-gray-200 mb-1">
                             Description
                         </label>
                         <textarea
@@ -143,12 +161,11 @@ export const CreateTaskPage: FC = () => {
                             onChange={handleInputChange}
                             rows={3}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Enter task description"
                         />
                     </div>
 
                     <div>
-                        <label htmlFor="deadlineAt" className="block text-sm font-medium text-gray-700 mb-1">
+                        <label htmlFor="deadlineAt" className="block text-sm font-medium text-gray-200 mb-1">
                             Deadline
                         </label>
                         <input
@@ -156,14 +173,29 @@ export const CreateTaskPage: FC = () => {
                             id="deadlineAt"
                             name="deadlineAt"
                             onChange={handleDateChange}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                            className="text-gray-200 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                        />
+                    </div>
+                </div>
+
+                <div className="py-4">
+                    <SearchUsers
+                        onUserSelect={handleUserSelect}
+                        apiClient={UsersApiClient}
+                        placeholder="Find a user..."
+                        className="mb-2"
+                    />
+                    <div className={"py-3"}>
+                        <UsersList
+                            users={selectedUsers}
+                            onRemoveUser={handleRemoveUser}
                         />
                     </div>
                 </div>
 
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                        <h2 className="text-lg font-semibold text-gray-800">Task Items</h2>
+                        <h2 className="text-lg font-semibold text-gray-200">Task Items</h2>
                         <button
                             type="button"
                             onClick={addTaskItem}
@@ -181,9 +213,9 @@ export const CreateTaskPage: FC = () => {
                     ) : (
                         <div className="space-y-4">
                             {task.taskItems.map((item, index) => (
-                                <div key={index} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                                <div key={index} className="p-4 border border-gray-200 rounded-lg bg-accent-1">
                                     <div className="flex justify-between items-start mb-3">
-                                        <h3 className="font-medium text-gray-800">Item #{index + 1}</h3>
+                                        <h3 className="font-medium text-gray-200">Item #{index + 1}</h3>
                                         <button
                                             type="button"
                                             onClick={() => removeTaskItem(index)}
@@ -196,7 +228,7 @@ export const CreateTaskPage: FC = () => {
 
                                     <div className="space-y-3">
                                         <div>
-                                            <label htmlFor={`item-title-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor={`item-title-${index}`} className="block text-sm font-medium text-gray-200 mb-1">
                                                 Item Title *
                                             </label>
                                             <input
@@ -205,13 +237,11 @@ export const CreateTaskPage: FC = () => {
                                                 value={item.title}
                                                 onChange={(e) => handleTaskItemChange(index, "title", e.target.value)}
                                                 className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                                placeholder="Enter item title"
                                                 required
                                             />
                                         </div>
-
                                         <div>
-                                            <label htmlFor={`item-description-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
+                                            <label htmlFor={`item-description-${index}`} className="block text-sm font-medium text-gray-200 mb-1">
                                                 Description
                                             </label>
                                             <textarea
@@ -220,24 +250,23 @@ export const CreateTaskPage: FC = () => {
                                                 onChange={(e) => handleTaskItemChange(index, "description", e.target.value)}
                                                 rows={2}
                                                 className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                                                placeholder="Enter item description (optional)"
                                             />
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
-                                                <label htmlFor={`item-fileType-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label htmlFor={`item-fileType-${index}`} className="block text-sm font-medium text-gray-200 mb-1">
                                                     File Type *
                                                 </label>
                                                 <select
                                                     id={`item-fileType-${index}`}
                                                     value={item.fileTypeId}
                                                     onChange={(e) => handleTaskItemChange(index, "fileTypeId", parseInt(e.target.value))}
-                                                    className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                                    className="text-gray-200 w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                                                     required
                                                 >
                                                     {FILE_TYPES.map((type) => (
-                                                        <option key={type.id} value={type.id}>
+                                                        <option className={"text-gray-800"} key={type.id} value={type.id}>
                                                             {type.name} ({type.extension})
                                                         </option>
                                                     ))}
@@ -245,18 +274,18 @@ export const CreateTaskPage: FC = () => {
                                             </div>
 
                                             <div>
-                                                <label htmlFor={`item-fileCategory-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label htmlFor={`item-fileCategory-${index}`} className="block text-sm font-medium text-gray-200 mb-1">
                                                     File Category *
                                                 </label>
                                                 <select
                                                     id={`item-fileCategory-${index}`}
                                                     value={item.fileCategoryId}
                                                     onChange={(e) => handleTaskItemChange(index, "fileCategoryId", parseInt(e.target.value))}
-                                                    className="w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                                                    className="text-gray-200 w-full px-3 py-1.5 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                                                     required
                                                 >
                                                     {FILE_CATEGORIES.map((category) => (
-                                                        <option key={category.id} value={category.id}>
+                                                        <option className={"text-gray-800"} key={category.id} value={category.id}>
                                                             {category.name}
                                                         </option>
                                                     ))}
@@ -271,7 +300,7 @@ export const CreateTaskPage: FC = () => {
                 </div>
 
                 {error && (
-                    <div className="p-3 bg-red-100 text-red-700 rounded-lg">
+                    <div className="p-3 bg-red-100 text-red-500 rounded-lg">
                         {error}
                     </div>
                 )}
@@ -280,7 +309,7 @@ export const CreateTaskPage: FC = () => {
                     <button
                         type="button"
                         onClick={() => navigate("/tasks")}
-                        className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="px-4 py-2 border border-gray-300 rounded-lg text-gray-200 hover:bg-gray-50 transition-colors"
                         disabled={isSubmitting}
                     >
                         Cancel

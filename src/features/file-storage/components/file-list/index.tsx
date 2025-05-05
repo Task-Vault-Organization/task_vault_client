@@ -8,7 +8,7 @@ interface FileListProps {
 
 export const FileListComponent: FC<FileListProps> = ({ files }) => {
     return (
-        <div className="grid gap-4">
+        <div className="grid gap-4 container">
             {files.map(file => (
                 <FileItem key={file.id} file={file} />
             ))}
