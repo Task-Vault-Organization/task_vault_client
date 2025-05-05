@@ -7,6 +7,7 @@ const authorizationResponseInterceptor = {
         return client.interceptors.response.use(
             async response => {
                 if (response.status === HttpStatusCode.UNAUTHORIZED) {
+                    console.log("intra")
                     AuthenticationService.logoutUser();
                 }
                 return response;

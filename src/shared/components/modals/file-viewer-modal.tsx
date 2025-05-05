@@ -1,10 +1,8 @@
 import { FC, useEffect, useState } from "react";
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react'
 import { XMarkIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline'
-import { FileType } from "../../../features/file-storage/types/file-type.ts";
-import FileViewer from 'react-file-viewer';
 import { FileStorageApiClient } from "../../../api/clients/file-storage-api-client.ts";
-import {ExclamationTriangleIcon} from "@heroicons/react/16/solid";
+import { ExclamationTriangleIcon } from "@heroicons/react/16/solid";
 
 interface FileViewerModal {
     open: boolean,
@@ -15,18 +13,27 @@ interface FileViewerModal {
 }
 
 export const FileViewerModal: FC<FileViewerModal> = ({ open, setOpen, fileId, fileType, fileName }) => {
-    const [file, setFile] = useState<any>(null);
+    const [fileUrl, setFileUrl] = useState<string | null>(null);
+    const [fileContent, setFileContent] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        console.log(fileType)
-        async function downloadFile() {
+        async function prepareFile() {
             try {
                 setIsLoading(true);
                 setError(null);
-                const res = await FileStorageApiClient.downloadFile(fileId);
-                setFile(res);
+
+                const response = await FileStorageApiClient.downloadFile(fileId);
+                const blob = new Blob([response], { type: getMimeType(fileType) });
+                const url = URL.createObjectURL(blob);
+                setFileUrl(url);
+
+                // Special handling for text files
+                if (fileType.toLowerCase() === 'txt') {
+                    const text = await blob.text();
+                    setFileContent(text);
+                }
             } catch (err) {
                 console.error("Failed to load file:", err);
                 setError("Failed to load file. Please try again.");
@@ -36,16 +43,41 @@ export const FileViewerModal: FC<FileViewerModal> = ({ open, setOpen, fileId, fi
         }
 
         if (open && fileId) {
-            downloadFile();
+            prepareFile();
         }
+
+        return () => {
+            if (fileUrl) {
+                URL.revokeObjectURL(fileUrl);
+            }
+        };
     }, [open, fileId]);
+
+    const getMimeType = (extension: string) => {
+        const types: Record<string, string> = {
+            'png': 'image/png',
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'gif': 'image/gif',
+            'pdf': 'application/pdf',
+            'txt': 'text/plain',
+            'csv': 'text/csv',
+            'doc': 'application/msword',
+            'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xls': 'application/vnd.ms-excel',
+            'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'ppt': 'application/vnd.ms-powerpoint',
+            'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+        };
+        return types[extension.toLowerCase()] || 'application/octet-stream';
+    };
 
     const handleDownload = async () => {
         try {
-            const response = await FileStorageApiClient.downloadFile(fileId);
-            const url = URL.createObjectURL(new Blob([response]));
+            if (!fileUrl) return;
+
             const link = document.createElement('a');
-            link.href = url;
+            link.href = fileUrl;
             link.setAttribute('download', fileName || `file-${fileId}.${fileType}`);
             document.body.appendChild(link);
             link.click();
@@ -53,6 +85,70 @@ export const FileViewerModal: FC<FileViewerModal> = ({ open, setOpen, fileId, fi
         } catch (err) {
             console.error("Download failed:", err);
             setError("Download failed. Please try again.");
+        }
+    };
+
+    const renderTextFile = () => {
+        if (!fileContent) return null;
+
+        return (
+            <div className="h-full w-full p-4 font-mono text-sm whitespace-pre-wrap overflow-auto">
+                {fileContent}
+            </div>
+        );
+    };
+
+    const renderImage = () => {
+        if (!fileUrl) return null;
+
+        return (
+            <div className="flex items-center justify-center h-full">
+                <img
+                    src={fileUrl}
+                    alt={fileName || "Image preview"}
+                    className="max-h-full max-w-full object-contain"
+                />
+            </div>
+        );
+    };
+
+    const renderPdf = () => {
+        if (!fileUrl) return null;
+
+        return (
+            <iframe
+                src={fileUrl}
+                className="h-full w-full"
+                title={fileName || "PDF Preview"}
+            />
+        );
+    };
+
+    const renderFilePreview = () => {
+        const normalizedFileType = fileType.toLowerCase();
+
+        switch(normalizedFileType) {
+            case 'txt':
+                return renderTextFile();
+            case 'png':
+            case 'jpg':
+            case 'jpeg':
+            case 'gif':
+                return renderImage();
+            case 'pdf':
+                return renderPdf();
+            default:
+                return (
+                    <div className="flex h-full flex-col items-center justify-center space-y-4 p-4">
+                        <ExclamationTriangleIcon className="h-12 w-12 text-yellow-500" />
+                        <p className="text-lg font-medium text-gray-700">
+                            Preview not available for this file type
+                        </p>
+                        <p className="text-sm text-gray-500">
+                            You can still download the file to view it.
+                        </p>
+                    </div>
+                );
         }
     };
 
@@ -109,24 +205,7 @@ export const FileViewerModal: FC<FileViewerModal> = ({ open, setOpen, fileId, fi
                                 </div>
                             ) : (
                                 <div className="h-[70vh] overflow-auto rounded-lg border border-gray-200 bg-gray-50">
-                                    {
-                                        (fileType == 'png' || fileType == 'jpg') &&
-                                        <FileViewer
-                                            fileType={fileType}
-                                            filePath={`https://localhost:44368/api/file-storage/download/${fileId}`}
-                                            key={fileId}
-                                            onError={(e: any) => {
-                                                console.error("File viewer error:", e);
-                                                setError("This file type cannot be previewed.");
-                                            }}
-                                            errorComponent={<div className="flex h-full items-center justify-center text-red-500">
-                                                Preview not available for this file type
-                                            </div>}
-                                            unsupportedComponent={<div className="flex h-full items-center justify-center text-gray-500">
-                                                Preview not available for this file type
-                                            </div>}
-                                        />
-                                    }
+                                    {renderFilePreview()}
                                 </div>
                             )}
                         </div>
@@ -144,5 +223,5 @@ export const FileViewerModal: FC<FileViewerModal> = ({ open, setOpen, fileId, fi
                 </div>
             </div>
         </Dialog>
-    )
-}
+    );
+};
