@@ -3,11 +3,25 @@ import {ReadApiClient} from "../base/read-api-client.ts";
 import {CrudApiClient} from "../base/crud-api-client.ts";
 import {BaseApiClient} from "../base/base-api-client.ts";
 import {GetUploadedFilesResponse} from "../../features/file-storage/types/get-uploaded-files-response.ts";
+import {GetFileTypeResponse} from "../../features/file-storage/types/get-file-type-response.ts";
+import {GetFileCategoriesResponse} from "../../features/file-storage/types/get-file-categories-response.ts";
 
 export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '') => {
     const getUploadedFiles = async (): Promise<GetUploadedFilesResponse> => {
         const response: AxiosResponse<GetUploadedFilesResponse> =
             await client.get(`${urlPath}uploaded`);
+        return response.data;
+    };
+
+    const getFileTypes = async (): Promise<GetFileTypeResponse> => {
+        const response: AxiosResponse<GetFileTypeResponse> =
+            await client.get(`${urlPath}file-types`);
+        return response.data;
+    };
+
+    const getFileCategories = async (): Promise<GetFileCategoriesResponse> => {
+        const response: AxiosResponse<GetFileCategoriesResponse> =
+            await client.get(`${urlPath}file-categories`);
         return response.data;
     };
 
@@ -36,6 +50,8 @@ export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '
         ...CrudApiClient(client, urlPath),
         getUploadedFiles,
         downloadFile,
-        uploadFile
+        uploadFile,
+        getFileTypes,
+        getFileCategories
     };
 })(BaseApiClient, 'file-storage/');

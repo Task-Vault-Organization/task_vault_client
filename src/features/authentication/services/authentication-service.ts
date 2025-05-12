@@ -8,6 +8,7 @@ import {useAlertsStore} from "../../../shared/stores/alerts-store.ts";
 import {useAuthenticationStore} from "../stores/authentication-store.ts";
 import {GetUserResponse} from "../../../shared/types/get-user-response.ts";
 import {localStorageLogout} from "../../../shared/helpers/local-storage-helpers.ts";
+import {CreateUser} from "../types/create-user.ts";
 
 export const AuthenticationService = (() => {
     const authenticateUser = async (authenticateUser: AuthenticateUser) => {
@@ -24,6 +25,14 @@ export const AuthenticationService = (() => {
         showAlert('success', res.message);
     }
 
+    const createUser = async (createUser: CreateUser) => {
+        const res: BaseApiResponse =
+            await AuthenticateApiClient.createUser(createUser);
+        if (res.message) {
+            showAlert('success', res.message);
+        }
+    }
+
     const logoutUser = () => {
         localStorageLogout();
         const { logoutStore } = useAuthenticationStore.getState();
@@ -32,6 +41,7 @@ export const AuthenticationService = (() => {
 
     return {
         authenticateUser: authenticateUser,
-        logoutUser: logoutUser
+        logoutUser: logoutUser,
+        createUser: createUser
     }
 })();

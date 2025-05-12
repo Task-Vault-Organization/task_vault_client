@@ -1,17 +1,27 @@
 import { FC, useState } from "react";
 import {BaseModal} from "../base-modal";
 import { Button } from "../../reusable/buttons/button";
+import {FileUpload} from "../../../../features/file-storage/components/file-upload";
+import {GetFile} from "../../../../features/file-storage/types/get-file.ts";
+import {FileItem} from "../../../../features/file-storage/components/file-item";
 
 interface Props {
     onClose: () => void;
     itemTitle: string;
+    taskItemId: string;
+    files: GetFile[];
+    onSubmitSuccess: (taskItemId: string, fileId: string) => void;
 }
 
-export const SubmitPopup: FC<Props> = ({ onClose, itemTitle }) => {
-    const [answer, setAnswer] = useState<string>("");
+export const SubmitPopup: FC<Props> = ({ onClose, itemTitle, taskItemId, files, onSubmitSuccess }) => {
+    const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
 
     const handleSubmit = () => {
-        console.log("Submitted answer:", answer);
+        if (!selectedFileId) {
+            alert("Please select a file before submitting.");
+            return;
+        }
+        onSubmitSuccess(taskItemId, selectedFileId);
         onClose();
     };
 
@@ -31,17 +41,29 @@ export const SubmitPopup: FC<Props> = ({ onClose, itemTitle }) => {
                 </>
             }
         >
-            <label htmlFor="answer" className="block text-sm font-medium text-gray-200 mb-2">
-                Your Answer
-            </label>
-            <textarea
-                id="answer"
-                value={answer}
-                onChange={(e) => setAnswer(e.target.value)}
-                rows={6}
-                className="w-full rounded-md bg-accent-1 border border-gray-600 text-sm text-white p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Write your answer here..."
-            />
+            <p className="text-gray-300 mb-4">Double-click a file below to select it for this task item.</p>
+
+            <div className="max-h-64 overflow-y-auto">
+                {files?.length > 0 ? (
+                    <div className="space-y-2">
+                        {files.map(file => (
+                            <div
+                                key={file.id}
+                                className={`rounded-lg p-3 border transition cursor-pointer ${
+                                    selectedFileId === file.id
+                                        ? "border-blue-400 bg-blue-900/20"
+                                        : "border-gray-600 hover:border-white"
+                                }`}
+                                onClick={() => setSelectedFileId(file.id)}
+                            >
+                                <FileItem file={file} />
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-sm text-gray-400">No uploaded files available. Please upload a file first.</p>
+                )}
+            </div>
         </BaseModal>
     );
 };

@@ -1,25 +1,28 @@
 import { FC, ReactNode, InputHTMLAttributes } from 'react';
+import { FieldError } from "react-hook-form";
 
 interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
     value: string;
     setValue: (val: string) => void;
     labelText: ReactNode | string;
-    error?: string | null;
     required?: boolean;
+    error?: FieldError;
 }
 
 export const FormField: FC<FormFieldProps> = ({
-                                                  value,
-                                                  setValue,
-                                                  labelText,
-                                                  error,
-                                                  required,
-                                                  ...rest
-                                              }) => {
+  value,
+  setValue,
+  labelText,
+  error,
+  required,
+  ...rest
+}) => {
     const inputClasses = `
-    w-full p-2.5 rounded-lg border text-sm transition
-    ${error ? 'bg-red-100 border-red-500 text-red-900 placeholder-red-400 focus:ring-red-500 focus:border-red-500' : 'bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-600'}
-  `;
+        w-full p-2.5 rounded-lg border text-sm transition
+        ${error
+        ? 'bg-red-50 border-red-300 text-red-800 placeholder-red-400 focus:ring-red-300 focus:border-red-400'
+        : 'bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-600'}
+    `;
 
     return (
         <div className="mb-4">
@@ -34,7 +37,11 @@ export const FormField: FC<FormFieldProps> = ({
                 className={inputClasses}
                 placeholder={typeof labelText === 'string' ? labelText : undefined}
             />
-            {error && <p className="mt-1 text-sm text-red-400">{error}</p>}
+            {error && (
+                <p className="mt-1 text-sm text-red-400">
+                    {error.message || "This field is required."}
+                </p>
+            )}
         </div>
     );
 };

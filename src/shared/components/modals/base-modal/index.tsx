@@ -15,7 +15,8 @@ interface BaseModalProps {
     children: ReactNode;
     showCloseButton?: boolean;
     footer?: ReactNode;
-    className?: string;
+    className?: string; // container overrides
+    contentClassName?: string; // new prop for dialog content styles
 }
 
 export const BaseModal: FC<BaseModalProps> = ({
@@ -25,7 +26,8 @@ export const BaseModal: FC<BaseModalProps> = ({
                                                   children,
                                                   showCloseButton = true,
                                                   footer,
-                                                  className = ""
+                                                  className = "",
+                                                  contentClassName = "",
                                               }) => {
     const [visible, setVisible] = useState(isOpen);
 
@@ -62,9 +64,11 @@ export const BaseModal: FC<BaseModalProps> = ({
                         leaveFrom="opacity-100 translate-y-0 sm:scale-100"
                         leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                     >
-                        <DialogPanel className={`w-full max-w-4xl transform overflow-hidden rounded-xl bg-accent-2 shadow-2xl transition-all border border-accent-3 ${className}`}>
+                        <DialogPanel
+                            className={`w-full max-w-4xl transform overflow-hidden rounded-xl shadow-2xl transition-all border border-gray-700 ${contentClassName} ${className}`}
+                        >
                             {title && (
-                                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-400">
+                                <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
                                     <DialogTitle className="text-lg font-semibold text-gray-200">{title}</DialogTitle>
                                     {showCloseButton && (
                                         <button
@@ -79,7 +83,7 @@ export const BaseModal: FC<BaseModalProps> = ({
                             )}
                             <div className="px-6 py-4 sm:p-6">{children}</div>
                             {footer && (
-                                <div className="flex justify-end gap-2 px-6 py-4 border-t border-gray-400">
+                                <div className="flex justify-end gap-2 px-6 py-4 border-t border-white/10">
                                     {footer}
                                 </div>
                             )}

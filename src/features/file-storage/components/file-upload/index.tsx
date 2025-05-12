@@ -52,11 +52,12 @@ export function FileUpload({ setLoading, onSuccess, onError, className = "" }: F
         setLoading?.(true);
 
         try {
-            await FileStorageApiClient.uploadFile(file);
+            const response = await FileStorageApiClient.uploadFile(file);
+            const fileId = response.fileId;
+            onSuccess?.(fileId);
             setMessage("File uploaded successfully!");
             showAlert("success", "File uploaded successfully!");
             setFile(null);
-            onSuccess?.();
         } catch (error) {
             setMessage("File upload failed. Please try again.");
             onError?.(error);
@@ -67,9 +68,7 @@ export function FileUpload({ setLoading, onSuccess, onError, className = "" }: F
     };
 
     return (
-        <div
-            className={`flex flex-col items-center gap-5 px-4 py-4 text-white border rounded-lg shadow-md bg-accent-2 ${className}`}
-        >
+        <div className={`w-full flex flex-col items-center gap-5 px-6 py-6 text-white dark:border dark:border-gray-700 rounded-lg shadow-md bg-accent-2 ${className}`}>
             <input type="file" onChange={handleFileChange} className="hidden" id="file-upload" />
             <label
                 htmlFor="file-upload"
@@ -90,7 +89,7 @@ export function FileUpload({ setLoading, onSuccess, onError, className = "" }: F
                 <p className="text-sm text-gray-200 truncate w-full text-center">Selected file: {file.name}</p>
             )}
 
-            <Button onClick={handleUpload} disabled={uploading} className="w-full max-w-xs">
+            <Button onClick={handleUpload} disabled={uploading} className="w-full">
                 {uploading ? "Uploading..." : "Upload File"}
             </Button>
 

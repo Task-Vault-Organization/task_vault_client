@@ -4,18 +4,25 @@ import {AuthenticationService} from "../../../features/authentication/services/a
 
 const authorizationResponseInterceptor = {
     use: (client: AxiosInstance) => {
-        return client.interceptors.response.use(
-            async response => {
-                if (response.status === HttpStatusCode.UNAUTHORIZED) {
-                    console.log("intra")
-                    AuthenticationService.logoutUser();
-                }
-                return response;
-            },
-            error => {
-                return Promise.reject(error);
-            },
-        );
+        try {
+            return client.interceptors.response.use(
+                async response => {
+                    if (response.status === HttpStatusCode.UNAUTHORIZED) {
+                        AuthenticationService.logoutUser();
+                    }
+                    return response;
+                },
+                error => {
+                    if (error.response && error.response.status === HttpStatusCode.UNAUTHORIZED) {
+                        AuthenticationService.logoutUser();
+                    }
+                    return Promise.reject(error);
+                },
+            );
+        } catch (error: any) {
+            console.error(error)
+            AuthenticationService.logoutUser();
+        }
     },
 };
 

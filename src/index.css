@@ -44,6 +44,10 @@ textarea {
   border-bottom: 1px solid #374151 !important;
 }
 
+.react-datepicker {
+  background-color: #1f2937 !important;
+}
+
 .react-datepicker__current-month,
 .react-datepicker-time__header,
 .react-datepicker__day-name {
@@ -70,4 +74,16 @@ textarea {
 
 .react-datepicker-wrapper {
   width: 100%;
+}
+
+.contexify {
+  border-radius: 10px !important;
+}
+.contexify div {
+  transition: all .2s;
+}
+
+.contexify div:hover {
+  background-color: initial !important;
+  transform: scale(1.01);
 }

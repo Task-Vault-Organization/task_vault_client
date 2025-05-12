@@ -14,7 +14,7 @@ export const TaskCard: FC<TaskCardProps> = ({ task, onClick, isOwnedTab }) => {
     return (
         <div
             onDoubleClick={onClick}
-            className="py-4 px-4 flex flex-col gap-3 text-white bg-accent-1 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 cursor-pointer"
+            className="py-4 px-4 flex flex-col gap-3 text-white bg-accent-1 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 ease-in-out hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 cursor-pointer dark:border dark:border-gray-700"
         >
             <div className="flex justify-between items-start">
                 <h3 className="font-semibold text-lg truncate">{task.title}</h3>

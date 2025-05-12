@@ -32,12 +32,6 @@ export const FileUploadToggle: FC<FileUploadToggleProps> = ({ setLoading }) => {
                             className="absolute bottom-24 left-1/2 transform -translate-x-1/2 w-full max-w-lg rounded-2xl shadow-2xl z-50"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <button
-                                onClick={() => setVisible(false)}
-                                className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
                             <FileUpload setLoading={setLoading} />
                         </motion.div>
                     </motion.div>

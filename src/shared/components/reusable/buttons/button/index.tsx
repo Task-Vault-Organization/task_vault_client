@@ -1,9 +1,11 @@
 import { ButtonHTMLAttributes, FC, ReactNode } from "react";
+import {Spinner} from "../../loading/spinner";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     fullWidth?: boolean;
     halfWidth?: boolean | null;
     children?: ReactNode[];
+    loading?: boolean
 }
 
 export const Button: FC<ButtonProps> = (props) => {
@@ -38,9 +40,13 @@ export const Button: FC<ButtonProps> = (props) => {
                   group
                   cursor-pointer`}
         >
-      <span className="relative z-10 group-hover:text-white/90">
-        {props.children}
-      </span>
+        <span className="relative z-10 group-hover:text-white/90 flex items-center justify-center w-full h-full">
+            {
+                props.loading ?
+                    <Spinner /> :
+                    props.children
+            }
+        </span>
             <span className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-lg"></span>
         </button>
     );

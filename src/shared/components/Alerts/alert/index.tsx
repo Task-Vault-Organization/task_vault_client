@@ -6,7 +6,7 @@ interface AlertProps {
 }
 
 export const Alert: FC<AlertProps> = ({ alert }) => {
-    const baseClasses = "p-4 mb-4 rounded-lg w-1/3";
+    const baseClasses = "p-4 mb-4 rounded-lg";
 
     const typeClasses = {
         info: "text-blue-700 bg-blue-100",

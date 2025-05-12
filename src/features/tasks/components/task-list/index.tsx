@@ -57,9 +57,6 @@ export const TaskList: FC<TaskListProps> = ({
 
     return (
         <div className="space-y-4 py-4">
-            {tasks.map((task) => (
-                <TaskCard key={task.id} task={task} onClick={() => onTaskClick(task.id)}  isOwnedTab={isOwnedTab} />
-            ))}
             {isOwnedTab && (
                 <Button
                     fullWidth={true}
@@ -69,6 +66,9 @@ export const TaskList: FC<TaskListProps> = ({
                     <span>+ Add New Task</span>
                 </Button>
             )}
+            {tasks.map((task) => (
+                <TaskCard key={task.id} task={task} onClick={() => onTaskClick(task.id)} isOwnedTab={isOwnedTab} />
+            ))}
         </div>
     );
 };
