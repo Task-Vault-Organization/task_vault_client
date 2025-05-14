@@ -5,11 +5,20 @@ import {BaseApiClient} from "../base/base-api-client.ts";
 import {GetUploadedFilesResponse} from "../../features/file-storage/types/get-uploaded-files-response.ts";
 import {GetFileTypeResponse} from "../../features/file-storage/types/get-file-type-response.ts";
 import {GetFileCategoriesResponse} from "../../features/file-storage/types/get-file-categories-response.ts";
+import {CreateDirectory} from "../../features/file-storage/types/create-directory.ts";
+import {BaseApiResponse} from "../../shared/types/base-api-response.ts";
+import {UploadFile} from "../../features/file-storage/types/upload-file.ts";
 
 export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '') => {
     const getUploadedFiles = async (): Promise<GetUploadedFilesResponse> => {
         const response: AxiosResponse<GetUploadedFilesResponse> =
             await client.get(`${urlPath}uploaded`);
+        return response.data;
+    };
+
+    const getUploadedDirectoryFiles = async (directoryName: string): Promise<GetUploadedFilesResponse> => {
+        const response: AxiosResponse<GetUploadedFilesResponse> =
+            await client.get(`${urlPath}uploaded/directory?directoryName=${directoryName}`);
         return response.data;
     };
 
@@ -32,9 +41,17 @@ export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '
         return response.data;
     };
 
-    const uploadFile = async (file: File): Promise<any> => {
+    const createDirectory = async (createDirectory: CreateDirectory): Promise<BaseApiResponse> => {
+        const response: AxiosResponse<BaseApiResponse> = await client.post(`${urlPath}create-directory`, createDirectory);
+        return response.data;
+    };
+
+    const uploadFile = async (uploadFile: UploadFile): Promise<any> => {
         const formData = new FormData();
-        formData.append("file", file);
+        formData.append("file", uploadFile.file);
+        if (uploadFile.directoryName) {
+            formData.append("directoryName", uploadFile.directoryName);
+        }
 
         const response: AxiosResponse<any> = await client.post(`${urlPath}upload`, formData, {
             headers: {
@@ -52,6 +69,8 @@ export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '
         downloadFile,
         uploadFile,
         getFileTypes,
-        getFileCategories
+        getFileCategories,
+        createDirectory,
+        getUploadedDirectoryFiles
     };
 })(BaseApiClient, 'file-storage/');

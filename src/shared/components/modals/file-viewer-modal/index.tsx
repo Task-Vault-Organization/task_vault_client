@@ -13,12 +13,12 @@ interface FileViewerModalProps {
 }
 
 export const FileViewerModal: FC<FileViewerModalProps> = ({
-                                                              open,
-                                                              setOpen,
-                                                              fileId,
-                                                              fileType,
-                                                              fileName,
-                                                          }) => {
+  open,
+  setOpen,
+  fileId,
+  fileType,
+  fileName,
+}) => {
     const [fileUrl, setFileUrl] = useState<string | null>(null);
     const [fileContent, setFileContent] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -29,20 +29,16 @@ export const FileViewerModal: FC<FileViewerModalProps> = ({
             try {
                 setIsLoading(true);
                 setError(null);
-
                 const response = await FileStorageApiClient.downloadFile(fileId);
                 const blob = new Blob([response], { type: getMimeType(fileType) });
                 const url = URL.createObjectURL(blob);
                 setFileUrl(url);
 
-                const lowerType = fileType.toLowerCase();
-
-                if (lowerType === "txt" || lowerType === "json") {
+                if (fileType.toLowerCase() === "txt" || fileType.toLowerCase() === "json") {
                     const text = await blob.text();
-                    if (lowerType === "json") {
+                    if (fileType.toLowerCase() === "json") {
                         try {
-                            const formatted = JSON.stringify(JSON.parse(text), null, 2);
-                            setFileContent(formatted);
+                            setFileContent(JSON.stringify(JSON.parse(text), null, 2));
                         } catch {
                             setFileContent(text);
                         }
@@ -50,7 +46,7 @@ export const FileViewerModal: FC<FileViewerModalProps> = ({
                         setFileContent(text);
                     }
                 }
-            } catch {
+            } catch (error) {
                 setError("Failed to load file. Please try again.");
             } finally {
                 setIsLoading(false);
@@ -68,7 +64,8 @@ export const FileViewerModal: FC<FileViewerModalProps> = ({
         };
     }, [open, fileId]);
 
-    const getMimeType = (extension: string) => {
+    const getMimeType = (extension?: string) => {
+        if (!extension) return "application/octet-stream";
         const types: Record<string, string> = {
             png: "image/png",
             jpg: "image/jpeg",
@@ -89,13 +86,18 @@ export const FileViewerModal: FC<FileViewerModalProps> = ({
 
     const handleDownload = async () => {
         try {
-            if (!fileUrl) return;
+            const response = await FileStorageApiClient.downloadFile(fileId);
+            const blob = new Blob([response], { type: getMimeType(fileType) });
+            const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
-            link.href = fileUrl;
-            link.setAttribute("download", fileName || `file-${fileId}.${fileType}`);
+            link.href = url;
+            link.setAttribute("download", fileName || `file.${fileType}`);
             document.body.appendChild(link);
             link.click();
-            link.remove();
+            setTimeout(() => {
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }, 100);
         } catch {
             setError("Download failed. Please try again.");
         }

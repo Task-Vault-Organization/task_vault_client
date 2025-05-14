@@ -7,6 +7,8 @@ export type GetFile = {
     name: string,
     uploaderId: string,
     uploadedAt: Date,
+    isDirectory: boolean,
+    directoryId?: string,
     fileTypeId: number,
     fileType: FileType | null,
     uploader: GetUser | null,
