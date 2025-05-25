@@ -22,7 +22,7 @@ export const router = createBrowserRouter([
             { path: "sign-up", element: <UnprotectedRoute><SignUp /></UnprotectedRoute> },
             { path: "login", element: <UnprotectedRoute><Login /></UnprotectedRoute> },
             { path: 'home', element: (<ProtectedRoute><HomePage /></ProtectedRoute>) },
-            { path: 'files/*', element: (<ProtectedRoute><MyFilesPage /></ProtectedRoute>) },
+            { path: 'files/:folderId', element: (<ProtectedRoute><MyFilesPage /></ProtectedRoute>) },
             { path: 'tasks', element: (<ProtectedRoute><TasksPage /></ProtectedRoute>) },
             {path: 'task/new', element: (<ProtectedRoute><CreateTaskPage /></ProtectedRoute>) },
             {path: 'task/:taskId', element: (<ProtectedRoute><TaskPage /></ProtectedRoute>) }

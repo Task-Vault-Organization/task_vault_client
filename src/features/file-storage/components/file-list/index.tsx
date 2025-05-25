@@ -7,6 +7,8 @@ import {
     Draggable,
     DropResult,
 } from "@hello-pangea/dnd";
+import { FileStorageApiClient } from "../../../../api/clients/file-storage-api-client.ts";
+import { UpdateFileIndex } from "../../types/update-file-index.ts";
 
 interface FileListProps {
     files: GetFile[];
@@ -14,7 +16,7 @@ interface FileListProps {
 }
 
 export const FileListComponent: FC<FileListProps> = ({ files, setFiles }) => {
-    const handleDragEnd = (result: DropResult) => {
+    const handleDragEnd = async (result: DropResult) => {
         if (!result.destination) return;
 
         const updatedFiles = Array.from(files);
@@ -22,6 +24,13 @@ export const FileListComponent: FC<FileListProps> = ({ files, setFiles }) => {
         updatedFiles.splice(result.destination.index, 0, movedFile);
 
         setFiles(updatedFiles);
+
+        const updatePayload: UpdateFileIndex = {
+            fileId: movedFile.id,
+            newIndex: result.destination.index,
+        };
+
+        await FileStorageApiClient.updateFileIndex(updatePayload);
     };
 
     return (

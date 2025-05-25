@@ -11,6 +11,7 @@ import "react-contexify/dist/ReactContexify.css";
 import { FaHistory } from "react-icons/fa";
 import { TbListDetails } from "react-icons/tb";
 import { useNavigate, useLocation } from "react-router";
+import {useDirectoriesStore} from "../../../../shared/stores/directories-store.ts";
 
 interface FileItemProps {
     file: GetFile;
@@ -39,8 +40,9 @@ const getMimeType = (extension?: string) => {
 export const FileItem: FC<FileItemProps> = ({ file }) => {
     const [open, setOpen] = useState(false);
     const { show } = useContextMenu({ id: `file-menu-${file.id}` });
-    const navigate = useNavigate(); // ✅
-    const location = useLocation(); // ✅
+    const navigate = useNavigate();
+
+    const { push } = useDirectoriesStore();
 
     const handleContextMenu = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -68,28 +70,24 @@ export const FileItem: FC<FileItemProps> = ({ file }) => {
     const handleDownload = async () => {
         try {
             const response = await FileStorageApiClient.downloadFile(file.id);
-            const blob = new Blob([response], { type: getMimeType(file.fileType) });
+            const blob = new Blob([response], { type: getMimeType(file.fileType?.extension) });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
-            link.setAttribute("download", file.name || `file.${file.fileType}`);
+            link.setAttribute("download", file.name);
             document.body.appendChild(link);
             link.click();
-            setTimeout(() => {
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-            }, 100);
-        } catch (error: any) {
-            console.error(error)
+            link.remove();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error("Download failed", err);
         }
     };
 
     const handleDoubleClick = () => {
         if (file.isDirectory) {
-            const basePath = location.pathname.endsWith("/")
-                ? location.pathname.slice(0, -1)
-                : location.pathname;
-            navigate(`${basePath}/${file.name}`);
+            navigate(`/files/${file.id}`);
+            push(file.id, file.name);
         } else {
             setOpen(true);
         }

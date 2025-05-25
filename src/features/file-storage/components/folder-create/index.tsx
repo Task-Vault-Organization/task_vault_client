@@ -3,8 +3,8 @@ import { Form } from "../../../../shared/components/forms/form";
 import { FileStorageApiClient } from "../../../../api/clients/file-storage-api-client";
 import { CreateDirectory } from "../../types/create-directory.ts";
 import {showAlert} from "../../../../shared/helpers/alerts-helpers.ts";
-import {useCurrentDirectoryName} from "../../../../shared/hooks/use-current-directory-name.ts";
 import {BASE_DIRECTORY_NAME} from "../../../../config/constants.ts";
+import {useParams} from "react-router";
 
 interface FolderFormValues {
     folderName: string;
@@ -13,7 +13,7 @@ interface FolderFormValues {
 export const FolderCreate = ({ onCreate }: { onCreate: (folderName: string) => void }) => {
     const [loading, setLoading] = useState(false);
 
-    const currentFolder = useCurrentDirectoryName();
+    const { folderId } = useParams();
 
     const fields = [
         {
@@ -33,8 +33,8 @@ export const FolderCreate = ({ onCreate }: { onCreate: (folderName: string) => v
         setLoading(true);
         try {
             const payload: CreateDirectory = { directoryName: folderName };
-            if (currentFolder !== BASE_DIRECTORY_NAME) {
-                payload.parentDirectoryName = currentFolder;
+            if (folderId !== BASE_DIRECTORY_NAME) {
+                payload.parentDirectoryId = folderId;
             }
             const response = await FileStorageApiClient.createDirectory(payload);
             showAlert("success", "Successfully created folder");
