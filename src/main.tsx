@@ -4,7 +4,6 @@ import "./index.css";
 import { router } from "./routes.tsx";
 import {createBrowserRouter, RouterProvider} from "react-router";
 
-
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
         <RouterProvider router={router} />

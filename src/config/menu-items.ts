@@ -15,7 +15,7 @@ export const menuItemsConfig = {
             text: 'Home'
         },
         {
-            to: '/files',
+            to: '/files/root',
             text: 'My Files'
         },
         {

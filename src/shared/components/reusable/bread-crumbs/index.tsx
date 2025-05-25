@@ -1,24 +1,36 @@
-import { FC } from "react";
-import { useLocation, useNavigate } from "react-router";
+import {FC, useEffect} from "react";
+import {useLocation, useNavigate, useParams} from "react-router";
 import { HiChevronRight } from "react-icons/hi";
+import {useDirectoriesStore} from "../../../stores/directories-store.ts";
 
 export const Breadcrumbs: FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
-    const pathSegments = location.pathname
-        .split("/")
-        .filter((segment) => segment.length > 0);
+    const { folderId } = useParams();
+
+    useEffect(() => {
+        const pathParts = location.pathname.split("/").filter(Boolean); // ["files", "folderId"]
+        const currentId = pathParts[pathParts.length - 1] || "root";
+        goTo(currentId);
+    }, [location.pathname]);
+
+    const { directoriesStack, goTo } = useDirectoriesStore();
+
+    const pathSegments: string[] = directoriesStack.map((d) => d.name);
 
     const handleClick = (index: number) => {
-        const newPath = "/" + pathSegments.slice(0, index + 1).join("/");
-        navigate(newPath);
+        const directory = directoriesStack[index];
+        if (!directory) return;
+
+        goTo(directory.id);
+        navigate(directory.id === "root" ? "/files/root" : `/files/${directory.id}`);
     };
 
     return (
         <div className="flex items-center text-sm text-gray-600 dark:text-gray-300 space-x-1 mb-4">
             <button
-                onClick={() => navigate("/files")}
+                onClick={() => handleClick(0)}
                 className="hover:underline hover:text-blue-600 dark:hover:text-blue-400"
             >
                 root

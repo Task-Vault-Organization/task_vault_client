@@ -3,8 +3,8 @@ import { UploadCloud } from "lucide-react";
 import { FileStorageApiClient } from "../../../../api/clients/file-storage-api-client.ts";
 import { showAlert } from "../../../../shared/helpers/alerts-helpers.ts";
 import { Button } from "../../../../shared/components/reusable/buttons/button";
-import { useCurrentDirectoryName } from "../../../../shared/hooks/use-current-directory-name.ts";
 import {UploadFile} from "../../types/upload-file.ts";
+import {useParams} from "react-router";
 
 interface FileUploadProps {
     setLoading?: (loading: boolean) => void;
@@ -19,7 +19,7 @@ export function FileUpload({ setLoading, onSuccess, onError, onUpload }: FileUpl
     const [message, setMessage] = useState("");
     const [isDragOver, setIsDragOver] = useState(false);
 
-    const folderName = useCurrentDirectoryName();
+    const { folderId } = useParams();
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files.length > 0) {
@@ -56,7 +56,7 @@ export function FileUpload({ setLoading, onSuccess, onError, onUpload }: FileUpl
 
         const uploadData: UploadFile = {
             file,
-            directoryName: folderName || undefined,
+            directoryId: folderId || undefined,
         };
 
         try {
