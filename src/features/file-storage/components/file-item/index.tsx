@@ -156,20 +156,20 @@ export const FileItem: FC<FileItemProps> = ({ file }) => {
 
             <Menu id={`file-menu-${file.id}`} style={{ backgroundColor: "#3E5879" }}>
                 <Item id="update" onClick={handleItemClick}>
-                    <FiEdit2 className="inline mr-2" style={{ color: "#fff" }} />
-                    <span style={{ color: "#fff" }}>Update</span>
+                    <FiEdit2 className="inline mr-2" style={{ color: "#fff", fontSize: '.9em' }} />
+                    <span style={{ color: "#fff", fontSize: '.9em' }}>Update</span>
                 </Item>
                 <Item id="delete" onClick={handleItemClick}>
-                    <FiTrash2 className="inline mr-2" style={{ color: "#fff" }} />
-                    <span style={{ color: "#fff" }}>Delete</span>
+                    <FiTrash2 className="inline mr-2" style={{ color: "#fff", fontSize: '.9em' }} />
+                    <span style={{ color: "#fff", fontSize: '.9em' }}>Delete</span>
                 </Item>
                 <Item id="history" onClick={handleItemClick}>
-                    <FaHistory className="inline mr-2" style={{ color: "#fff" }} />
-                    <span style={{ color: "#fff" }}>Show History</span>
+                    <FaHistory className="inline mr-2" style={{ color: "#fff", fontSize: '.9em' }} />
+                    <span style={{ color: "#fff",fontSize: '.9em' }}>Show History</span>
                 </Item>
                 <Item id="details" onClick={handleItemClick}>
-                    <TbListDetails className="inline mr-2" style={{ color: "#fff" }} />
-                    <span style={{ color: "#fff" }}>Show Details</span>
+                    <TbListDetails className="inline mr-2" style={{ color: "#fff", fontSize: '.9em' }} />
+                    <span style={{ color: "#fff", fontSize: '.9em' }}>Show Details</span>
                 </Item>
             </Menu>
 
