@@ -9,7 +9,8 @@ const responseErrorInterceptor = {
             (response: AxiosResponse) => response,
             (error: AxiosError) => {
                 const errorResponse: ApiErrorResponse = error.response?.data;
-                showAlert('error', errorResponse.detail || errorResponse.title);
+                if (errorResponse.detail || errorResponse.title)
+                    showAlert('error', errorResponse.detail || errorResponse.title);
                 console.log('API Error:', error);
                 return Promise.reject(error);
             },

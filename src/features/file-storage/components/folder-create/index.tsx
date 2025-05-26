@@ -19,6 +19,7 @@ export const FolderCreate = ({ onCreate }: { onCreate: (folderName: string) => v
         {
             name: "folderName",
             label: "Folder Name",
+            autoFocus: true,
             type: "text",
             placeholder: "Enter folder name",
             validation: {

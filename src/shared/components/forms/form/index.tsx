@@ -16,6 +16,7 @@ export interface FormFieldConfig {
     options?: { id: number | string; name: string }[]; // Only for select
     validation?: object;
     customRender?: () => ReactNode;
+    autoFocus?: boolean
 }
 
 interface FormProps<T extends FieldValues> {
@@ -82,6 +83,7 @@ export const Form = <T extends FieldValues>({
                     setValue: (val: any) => setValue(field.name, val),
                     placeholder: field.placeholder,
                     error: errors[field.name],
+                    autoFocus: field.autoFocus | false
                 };
 
                 switch (field.type) {

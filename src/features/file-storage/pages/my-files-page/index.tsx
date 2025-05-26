@@ -69,7 +69,7 @@ export const MyFilesPage: FC = () => {
                 <>
                     <Breadcrumbs />
                     <div className="flex flex-col items-center space-y-4 w-full">
-                        <FileListComponent files={files} setFiles={setFiles} />
+                        <FileListComponent files={files} setFiles={setFiles} setLoading={setLoading} fetchFiles={fetchFiles} />
                     </div>
                 </>
             )}

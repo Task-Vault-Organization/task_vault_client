@@ -13,9 +13,11 @@ import { UpdateFileIndex } from "../../types/update-file-index.ts";
 interface FileListProps {
     files: GetFile[];
     setFiles: (files: GetFile[]) => void;
+    setLoading?: (loading: boolean) => void;
+    fetchFiles?: () => Promise<void>;
 }
 
-export const FileListComponent: FC<FileListProps> = ({ files, setFiles }) => {
+export const FileListComponent: FC<FileListProps> = ({ files, setFiles, setLoading, fetchFiles }) => {
     const handleDragEnd = async (result: DropResult) => {
         if (!result.destination) return;
 
@@ -54,7 +56,13 @@ export const FileListComponent: FC<FileListProps> = ({ files, setFiles }) => {
                                         {...provided.draggableProps}
                                         {...provided.dragHandleProps}
                                     >
-                                        <FileItem file={file} />
+                                        <FileItem
+                                            file={file}
+                                            setLoading={setLoading}
+                                            fetchFiles={fetchFiles}
+                                            files={files}
+                                            setFiles={setFiles}
+                                        />
                                     </div>
                                 )}
                             </Draggable>

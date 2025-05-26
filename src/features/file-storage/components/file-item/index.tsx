@@ -1,20 +1,25 @@
-import { FC, useState } from "react";
+import { FC, useState, useRef, useEffect } from "react";
 import { GetFile } from "../../types/get-file.ts";
 import { FileIcon, defaultStyles } from "react-file-icon";
 import { FiDownload, FiShare2, FiEdit2, FiTrash2 } from "react-icons/fi";
-import { FaFolder } from "react-icons/fa";
+import { FaFolder, FaHistory } from "react-icons/fa";
 import { getFileExtension } from "../../../../shared/helpers/file-helpers.ts";
 import { FileViewerModal } from "../../../../shared/components/modals/file-viewer-modal";
 import { FileStorageApiClient } from "../../../../api/clients/file-storage-api-client.ts";
 import { Menu, Item, useContextMenu } from "react-contexify";
 import "react-contexify/dist/ReactContexify.css";
-import { FaHistory } from "react-icons/fa";
 import { TbListDetails } from "react-icons/tb";
-import { useNavigate, useLocation } from "react-router";
-import {useDirectoriesStore} from "../../../../shared/stores/directories-store.ts";
+import { useNavigate } from "react-router";
+import { useDirectoriesStore } from "../../../../shared/stores/directories-store.ts";
+import { AreYouSureModal } from "../../../../shared/components/modals/are-you-sure-modal";
+import { showAlert } from "../../../../shared/helpers/alerts-helpers.ts";
 
 interface FileItemProps {
     file: GetFile;
+    setLoading?: (loading: boolean) => void;
+    fetchFiles?: () => Promise<void>;
+    files: GetFile[];
+    setFiles: (files: GetFile[]) => void;
 }
 
 const getMimeType = (extension?: string) => {
@@ -37,12 +42,25 @@ const getMimeType = (extension?: string) => {
     return types[extension.toLowerCase()] || "application/octet-stream";
 };
 
-export const FileItem: FC<FileItemProps> = ({ file }) => {
+export const FileItem: FC<FileItemProps> = ({ file, setLoading, fetchFiles, files, setFiles }) => {
     const [open, setOpen] = useState(false);
+    const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
+    const isDirectory = file.isDirectory;
+    const fileExtension = isDirectory ? "" : getFileExtension(file.name);
+    const baseName = isDirectory ? file.name : file.name.replace(/\.[^/.]+$/, "");
+    const [editedName, setEditedName] = useState(baseName);
+    const inputRef = useRef<HTMLInputElement>(null);
     const { show } = useContextMenu({ id: `file-menu-${file.id}` });
     const navigate = useNavigate();
-
     const { push } = useDirectoriesStore();
+
+    useEffect(() => {
+        if (isEditing && inputRef.current) {
+            inputRef.current.focus();
+            inputRef.current.select();
+        }
+    }, [isEditing]);
 
     const handleContextMenu = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -53,16 +71,14 @@ export const FileItem: FC<FileItemProps> = ({ file }) => {
         const { file } = props;
         switch (id) {
             case "update":
-                console.log("Updating", file.name);
+                setIsEditing(true);
                 break;
             case "delete":
-                console.log("Deleting", file.name);
+                setConfirmDeleteOpen(true);
                 break;
             case "history":
-                console.log("History for", file.name);
                 break;
             case "details":
-                console.log("Details for", file.name);
                 break;
         }
     };
@@ -84,6 +100,17 @@ export const FileItem: FC<FileItemProps> = ({ file }) => {
         }
     };
 
+    const deleteFile = async () => {
+        try {
+            if (setLoading) setLoading(true);
+            await FileStorageApiClient.deleteFile(file.id);
+            if (fetchFiles) await fetchFiles();
+            showAlert("success", "Successfully deleted item");
+        } catch (err) {
+            console.error("Delete failed", err);
+        }
+    };
+
     const handleDoubleClick = () => {
         if (file.isDirectory) {
             navigate(`/files/${file.id}`);
@@ -93,18 +120,45 @@ export const FileItem: FC<FileItemProps> = ({ file }) => {
         }
     };
 
-    const fileExtension = getFileExtension(file.name);
+    const applyRename = async () => {
+        const finalName = isDirectory ? editedName : `${editedName}${fileExtension ? `.${fileExtension}` : ""}`;
+        if (finalName !== file.name) {
+            try {
+                const res = await FileStorageApiClient.renameFile({ fileId: file.id, name: finalName });
+                showAlert("success", res.message);
+                const newFiles = files;
+                const foundFile = newFiles.find((f) => f.id === file.id);
+                if (foundFile) {
+                    foundFile.name = res.renamedFile?.name || finalName;
+                }
+                setFiles(newFiles);
+            } catch (err) {
+                console.error("Rename failed", err);
+            }
+        }
+        setIsEditing(false);
+    };
+
+    const handleRename = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+            applyRename();
+        }
+    };
+
+    const handleBlur = () => {
+        applyRename();
+    };
+
     const formattedDate = new Date(file.uploadedAt).toLocaleDateString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
     });
+
     const formattedSize =
         file.size > 1024 * 1024
             ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
             : `${(file.size / 1024).toFixed(1)} KB`;
-
-    const isDirectory = file.isDirectory;
 
     return (
         <>
@@ -130,7 +184,27 @@ export const FileItem: FC<FileItemProps> = ({ file }) => {
                 </div>
 
                 <div className="flex-grow min-w-0 text-center sm:text-left">
-                    <p className="font-medium truncate">{file.name}</p>
+                    {isEditing ? (
+                        <div className="inline-flex items-center gap-1 max-w-full">
+                            <input
+                                ref={inputRef}
+                                value={editedName}
+                                onChange={(e) => setEditedName(e.target.value)}
+                                onKeyDown={handleRename}
+                                onBlur={handleBlur}
+                                className="font-medium bg-gray-50 dark:bg-gray-700 px-1 py-0.5 text-center sm:text-left whitespace-nowrap overflow-visible"
+                                style={{ width: `${Math.max(editedName.length, 4) + 1}ch` }}
+                            />
+                            {!isDirectory && (
+                                <span className="text-gray-400 dark:text-gray-500 text-sm whitespace-nowrap">
+                                    .{fileExtension}
+                                 </span>
+                            )}
+                        </div>
+                    ) : (
+                        <p className="font-medium truncate">{file.name}</p>
+                    )}
+
                     <div className="flex flex-wrap justify-center sm:justify-start items-center gap-x-4 text-sm text-gray-500 dark:text-gray-400">
                         <span>{formattedSize}</span>
                         <span>•</span>
@@ -156,20 +230,20 @@ export const FileItem: FC<FileItemProps> = ({ file }) => {
 
             <Menu id={`file-menu-${file.id}`} style={{ backgroundColor: "#3E5879" }}>
                 <Item id="update" onClick={handleItemClick}>
-                    <FiEdit2 className="inline mr-2" style={{ color: "#fff", fontSize: '.9em' }} />
-                    <span style={{ color: "#fff", fontSize: '.9em' }}>Update</span>
+                    <FiEdit2 className="inline mr-2" style={{ color: "#fff", fontSize: ".9em" }} />
+                    <span style={{ color: "#fff", fontSize: ".9em" }}>Rename</span>
                 </Item>
                 <Item id="delete" onClick={handleItemClick}>
-                    <FiTrash2 className="inline mr-2" style={{ color: "#fff", fontSize: '.9em' }} />
-                    <span style={{ color: "#fff", fontSize: '.9em' }}>Delete</span>
+                    <FiTrash2 className="inline mr-2" style={{ color: "#fff", fontSize: ".9em" }} />
+                    <span style={{ color: "#fff", fontSize: ".9em" }}>Delete</span>
                 </Item>
                 <Item id="history" onClick={handleItemClick}>
-                    <FaHistory className="inline mr-2" style={{ color: "#fff", fontSize: '.9em' }} />
-                    <span style={{ color: "#fff",fontSize: '.9em' }}>Show History</span>
+                    <FaHistory className="inline mr-2" style={{ color: "#fff", fontSize: ".9em" }} />
+                    <span style={{ color: "#fff", fontSize: ".9em" }}>Show History</span>
                 </Item>
                 <Item id="details" onClick={handleItemClick}>
-                    <TbListDetails className="inline mr-2" style={{ color: "#fff", fontSize: '.9em' }} />
-                    <span style={{ color: "#fff", fontSize: '.9em' }}>Show Details</span>
+                    <TbListDetails className="inline mr-2" style={{ color: "#fff", fontSize: ".9em" }} />
+                    <span style={{ color: "#fff", fontSize: ".9em" }}>Show Details</span>
                 </Item>
             </Menu>
 
@@ -182,6 +256,14 @@ export const FileItem: FC<FileItemProps> = ({ file }) => {
                     fileName={file.name}
                 />
             )}
+
+            <AreYouSureModal
+                isOpen={confirmDeleteOpen}
+                onClose={() => setConfirmDeleteOpen(false)}
+                onConfirm={deleteFile}
+                title="Delete File"
+                message={`Are you sure you want to delete "${file.name}"? This action cannot be undone.`}
+            />
         </>
     );
 };

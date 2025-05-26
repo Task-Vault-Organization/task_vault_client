@@ -9,6 +9,8 @@ import {CreateDirectory} from "../../features/file-storage/types/create-director
 import {BaseApiResponse} from "../../shared/types/base-api-response.ts";
 import {UploadFile} from "../../features/file-storage/types/upload-file.ts";
 import {UpdateFileIndex} from "../../features/file-storage/types/update-file-index.ts";
+import {RenameFile} from "../../features/file-storage/types/rename-file.ts";
+import {RenameFileResponse} from "../../features/file-storage/types/rename-file-response.ts";
 
 export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '') => {
     const getUploadedFiles = async (): Promise<GetUploadedFilesResponse> => {
@@ -47,6 +49,16 @@ export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '
         return response.data;
     };
 
+    const deleteFile = async (fileId: string): Promise<BaseApiResponse> => {
+        const response: AxiosResponse<BaseApiResponse> = await client.delete(`${urlPath}${fileId}`);
+        return response.data;
+    };
+
+    const renameFile = async (renameFile: RenameFile): Promise<RenameFileResponse> => {
+        const response: AxiosResponse<RenameFileResponse> = await client.patch(`${urlPath}file/rename`, renameFile);
+        return response.data;
+    };
+
     const updateFileIndex = async (updateFileIndex: UpdateFileIndex): Promise<BaseApiResponse> => {
         const response: AxiosResponse<BaseApiResponse> = await client.post(`${urlPath}files/update-index`, updateFileIndex);
         return response.data;
@@ -78,6 +90,8 @@ export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '
         getFileCategories,
         createDirectory,
         getUploadedDirectoryFiles,
-        updateFileIndex
+        updateFileIndex,
+        deleteFile,
+        renameFile
     };
 })(BaseApiClient, 'file-storage/');
