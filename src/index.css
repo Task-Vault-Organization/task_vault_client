@@ -111,3 +111,14 @@ textarea {
   background-color: initial !important;
   transform: scale(1.01);
 }
+
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+  border-radius: 4px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}

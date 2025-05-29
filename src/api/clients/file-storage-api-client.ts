@@ -11,6 +11,7 @@ import {UploadFile} from "../../features/file-storage/types/upload-file.ts";
 import {UpdateFileIndex} from "../../features/file-storage/types/update-file-index.ts";
 import {RenameFile} from "../../features/file-storage/types/rename-file.ts";
 import {RenameFileResponse} from "../../features/file-storage/types/rename-file-response.ts";
+import {GetFileHistoryResponse} from "../../features/file-storage/types/get-file-history-response.ts";
 
 export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '') => {
     const getUploadedFiles = async (): Promise<GetUploadedFilesResponse> => {
@@ -34,6 +35,12 @@ export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '
     const getFileCategories = async (): Promise<GetFileCategoriesResponse> => {
         const response: AxiosResponse<GetFileCategoriesResponse> =
             await client.get(`${urlPath}file-categories`);
+        return response.data;
+    };
+
+    const getFileHistory = async (fileId: string): Promise<GetFileHistoryResponse> => {
+        const response: AxiosResponse<GetFileHistoryResponse> =
+            await client.get(`${urlPath}${fileId}/history`);
         return response.data;
     };
 
@@ -92,6 +99,7 @@ export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '
         getUploadedDirectoryFiles,
         updateFileIndex,
         deleteFile,
-        renameFile
+        renameFile,
+        getFileHistory
     };
 })(BaseApiClient, 'file-storage/');

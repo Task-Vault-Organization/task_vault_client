@@ -1,4 +1,4 @@
-import { FC, useState, useRef, useEffect } from "react";
+import React, { FC, useState, useRef, useEffect } from "react";
 import { GetFile } from "../../types/get-file.ts";
 import { FileIcon, defaultStyles } from "react-file-icon";
 import { FiDownload, FiShare2, FiEdit2, FiTrash2 } from "react-icons/fi";
@@ -8,10 +8,10 @@ import { FileViewerModal } from "../../../../shared/components/modals/file-viewe
 import { FileStorageApiClient } from "../../../../api/clients/file-storage-api-client.ts";
 import { Menu, Item, useContextMenu } from "react-contexify";
 import "react-contexify/dist/ReactContexify.css";
-import { TbListDetails } from "react-icons/tb";
 import { useNavigate } from "react-router";
 import { useDirectoriesStore } from "../../../../shared/stores/directories-store.ts";
 import { AreYouSureModal } from "../../../../shared/components/modals/are-you-sure-modal";
+import { FileHistoryModal } from "../../../../shared/components/modals/file-history-modal";
 import { showAlert } from "../../../../shared/helpers/alerts-helpers.ts";
 
 interface FileItemProps {
@@ -46,6 +46,7 @@ export const FileItem: FC<FileItemProps> = ({ file, setLoading, fetchFiles, file
     const [open, setOpen] = useState(false);
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const [historyOpen, setHistoryOpen] = useState(false);
     const isDirectory = file.isDirectory;
     const fileExtension = isDirectory ? "" : getFileExtension(file.name);
     const baseName = isDirectory ? file.name : file.name.replace(/\.[^/.]+$/, "");
@@ -67,8 +68,7 @@ export const FileItem: FC<FileItemProps> = ({ file, setLoading, fetchFiles, file
         show({ event: e, props: { file } });
     };
 
-    const handleItemClick = ({ id, props }: any) => {
-        const { file } = props;
+    const handleItemClick = ({ id }: any) => {
         switch (id) {
             case "update":
                 setIsEditing(true);
@@ -77,6 +77,7 @@ export const FileItem: FC<FileItemProps> = ({ file, setLoading, fetchFiles, file
                 setConfirmDeleteOpen(true);
                 break;
             case "history":
+                setHistoryOpen(true);
                 break;
             case "details":
                 break;
@@ -86,14 +87,19 @@ export const FileItem: FC<FileItemProps> = ({ file, setLoading, fetchFiles, file
     const handleDownload = async () => {
         try {
             const response = await FileStorageApiClient.downloadFile(file.id);
-            const blob = new Blob([response], { type: getMimeType(file.fileType?.extension) });
+            let blob;
+            if (response instanceof Blob) {
+                blob = response;
+            } else {
+                blob = new Blob([response], { type: getMimeType(file.fileType?.extension) });
+            }
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
             link.setAttribute("download", file.name);
             document.body.appendChild(link);
             link.click();
-            link.remove();
+            document.body.removeChild(link);
             URL.revokeObjectURL(url);
         } catch (err) {
             console.error("Download failed", err);
@@ -139,14 +145,14 @@ export const FileItem: FC<FileItemProps> = ({ file, setLoading, fetchFiles, file
         setIsEditing(false);
     };
 
-    const handleRename = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleRename = async (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter") {
-            applyRename();
+            await applyRename();
         }
     };
 
-    const handleBlur = () => {
-        applyRename();
+    const handleBlur = async () => {
+        await applyRename();
     };
 
     const formattedDate = new Date(file.uploadedAt).toLocaleDateString("en-US", {
@@ -198,7 +204,7 @@ export const FileItem: FC<FileItemProps> = ({ file, setLoading, fetchFiles, file
                             {!isDirectory && (
                                 <span className="text-gray-400 dark:text-gray-500 text-sm whitespace-nowrap">
                                     .{fileExtension}
-                                 </span>
+                                </span>
                             )}
                         </div>
                     ) : (
@@ -241,10 +247,6 @@ export const FileItem: FC<FileItemProps> = ({ file, setLoading, fetchFiles, file
                     <FaHistory className="inline mr-2" style={{ color: "#fff", fontSize: ".9em" }} />
                     <span style={{ color: "#fff", fontSize: ".9em" }}>Show History</span>
                 </Item>
-                <Item id="details" onClick={handleItemClick}>
-                    <TbListDetails className="inline mr-2" style={{ color: "#fff", fontSize: ".9em" }} />
-                    <span style={{ color: "#fff", fontSize: ".9em" }}>Show Details</span>
-                </Item>
             </Menu>
 
             {!isDirectory && (
@@ -263,6 +265,12 @@ export const FileItem: FC<FileItemProps> = ({ file, setLoading, fetchFiles, file
                 onConfirm={deleteFile}
                 title="Delete File"
                 message={`Are you sure you want to delete "${file.name}"? This action cannot be undone.`}
+            />
+
+            <FileHistoryModal
+                open={historyOpen}
+                setOpen={setHistoryOpen}
+                fileId={file.id}
             />
         </>
     );
