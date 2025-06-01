@@ -1,16 +1,18 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { UploadCloud } from "lucide-react";
 import { FileStorageApiClient } from "../../../../api/clients/file-storage-api-client.ts";
 import { showAlert } from "../../../../shared/helpers/alerts-helpers.ts";
 import { Button } from "../../../../shared/components/reusable/buttons/button";
-import {UploadFile} from "../../types/upload-file.ts";
-import {useParams} from "react-router";
+import { UploadFile } from "../../types/upload-file.ts";
+import { useParams } from "react-router";
+import {useAuthenticationStore} from "../../../authentication/stores/authentication-store.ts";
+import {AuthenticationState} from "../../../authentication/types/authentication-state.ts";
 
 interface FileUploadProps {
     setLoading?: (loading: boolean) => void;
     onSuccess?: () => void;
     onError?: (error: unknown) => void;
-    onUpload?: () => void
+    onUpload?: () => void;
 }
 
 export function FileUpload({ setLoading, onSuccess, onError, onUpload }: FileUploadProps) {
@@ -18,8 +20,11 @@ export function FileUpload({ setLoading, onSuccess, onError, onUpload }: FileUpl
     const [uploading, setUploading] = useState(false);
     const [message, setMessage] = useState("");
     const [isDragOver, setIsDragOver] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { folderId } = useParams();
+
+    const user = useAuthenticationStore((state: AuthenticationState) => state.user);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files && event.target.files.length > 0) {
@@ -56,7 +61,7 @@ export function FileUpload({ setLoading, onSuccess, onError, onUpload }: FileUpl
 
         const uploadData: UploadFile = {
             file,
-            directoryId: folderId || undefined,
+            directoryId: folderId !== "root" ? folderId : user.rootDirectoryId,
         };
 
         try {
@@ -66,7 +71,8 @@ export function FileUpload({ setLoading, onSuccess, onError, onUpload }: FileUpl
             showAlert("success", "File uploaded successfully!");
             setMessage("File uploaded successfully!");
             setFile(null);
-            onUpload();
+            if (fileInputRef.current) fileInputRef.current.value = "";
+            onUpload?.();
         } catch (error) {
             setMessage("File upload failed. Please try again.");
             onError?.(error);
@@ -85,7 +91,13 @@ export function FileUpload({ setLoading, onSuccess, onError, onUpload }: FileUpl
         >
             <h2 className="text-xl font-semibold text-white">Upload File</h2>
 
-            <input type="file" onChange={handleFileChange} className="hidden" id="file-upload" />
+            <input
+                ref={fileInputRef}
+                type="file"
+                onChange={handleFileChange}
+                className="hidden"
+                id="file-upload"
+            />
 
             <label
                 htmlFor="file-upload"
@@ -109,14 +121,10 @@ export function FileUpload({ setLoading, onSuccess, onError, onUpload }: FileUpl
             )}
 
             <div className="flex justify-end">
-                <Button type="submit" disabled={uploading || !file}>
-                    {uploading ? "Uploading..." : "Upload"}
+                <Button type="submit" disabled={uploading || !file} loading={uploading}>
+                    Upload
                 </Button>
             </div>
-
-            {message && (
-                <p className="text-sm text-gray-400 text-center">{message}</p>
-            )}
         </form>
     );
 }

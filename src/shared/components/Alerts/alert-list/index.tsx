@@ -8,7 +8,7 @@ export const AlertList: FC = () => {
     const alerts = useAlertsStore((state) => state.alerts);
 
     return (
-        <div className="fixed bottom-5 left-5 flex flex-col-reverse items-start gap-2 z-50 pointer-events-none">
+        <div className="fixed bottom-5 left-5 flex flex-col-reverse items-start gap-2 z-50 pointer-events-none z-100">
             <AnimatePresence>
                 {alerts.map((alert: AlertType) => (
                     <motion.div

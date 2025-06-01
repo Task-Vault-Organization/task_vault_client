@@ -1,4 +1,4 @@
-import { useState, ReactNode } from "react";
+import { useState, ReactNode, forwardRef, useImperativeHandle } from "react";
 import { useForm, SubmitHandler, FieldValues } from "react-hook-form";
 import { Button } from "../../reusable/buttons/button";
 import { FormField } from "../form-field";
@@ -13,10 +13,14 @@ export interface FormFieldConfig {
     type?: SupportedFieldType;
     placeholder?: string;
     autoComplete?: string;
-    options?: { id: number | string; name: string }[]; // Only for select
+    options?: { id: number | string; name: string }[];
     validation?: object;
     customRender?: () => ReactNode;
-    autoFocus?: boolean
+    autoFocus?: boolean;
+}
+
+export interface FormRef {
+    reset: () => void;
 }
 
 interface FormProps<T extends FieldValues> {
@@ -31,17 +35,20 @@ interface FormProps<T extends FieldValues> {
     children?: ReactNode;
 }
 
-export const Form = <T extends FieldValues>({
-    fields,
-    onSubmit,
-    loading = false,
-    submitLabel = "Submit",
-    defaultValues = {},
-    enableHoneypot = true,
-    enableCooldown = true,
-    cooldownMs = 1000,
-    children,
-}: FormProps<T>) => {
+export const Form = forwardRef<FormRef, FormProps<any>>(function Form<T extends FieldValues>(
+    {
+        fields,
+        onSubmit,
+        loading = false,
+        submitLabel = "Submit",
+        defaultValues = {},
+        enableHoneypot = true,
+        enableCooldown = true,
+        cooldownMs = 1000,
+        children,
+    }: FormProps<T>,
+    ref
+) {
     const [cooldown, setCooldown] = useState(false);
     const {
         register,
@@ -49,17 +56,20 @@ export const Form = <T extends FieldValues>({
         formState: { errors, isSubmitting },
         setValue,
         watch,
+        reset,
     } = useForm<T>({ defaultValues });
+
+    useImperativeHandle(ref, () => ({
+        reset,
+    }));
 
     const onValidSubmit: SubmitHandler<T> = (data) => {
         if (enableHoneypot && (data as any).honeypot) return;
         if (enableCooldown && cooldown) return;
-
         if (enableCooldown) {
             setCooldown(true);
             setTimeout(() => setCooldown(false), cooldownMs);
         }
-
         onSubmit(data);
     };
 
@@ -74,7 +84,6 @@ export const Form = <T extends FieldValues>({
                     {...register("honeypot" as any)}
                 />
             )}
-
             {fields.map((field) => {
                 const value = watch(field.name);
                 const commonProps = {
@@ -83,9 +92,8 @@ export const Form = <T extends FieldValues>({
                     setValue: (val: any) => setValue(field.name, val),
                     placeholder: field.placeholder,
                     error: errors[field.name],
-                    autoFocus: field.autoFocus | false
+                    autoFocus: field.autoFocus || false,
                 };
-
                 switch (field.type) {
                     case "textarea":
                         return (
@@ -134,9 +142,7 @@ export const Form = <T extends FieldValues>({
                         );
                 }
             })}
-
             {children}
-
             <div className="pt-4">
                 <Button
                     type="submit"
@@ -149,4 +155,4 @@ export const Form = <T extends FieldValues>({
             </div>
         </form>
     );
-};
+});

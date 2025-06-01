@@ -12,6 +12,10 @@ import {UpdateFileIndex} from "../../features/file-storage/types/update-file-ind
 import {RenameFile} from "../../features/file-storage/types/rename-file.ts";
 import {RenameFileResponse} from "../../features/file-storage/types/rename-file-response.ts";
 import {GetFileHistoryResponse} from "../../features/file-storage/types/get-file-history-response.ts";
+import {CreateOrUpdateFileShareRequest} from "../../features/file-storage/types/create-or-update-file-share-request.ts";
+import {ResolveFileShareRequest} from "../../features/file-storage/types/resolve-file-share-request.ts";
+import {GetFileShareDataResponse} from "../../features/file-storage/types/get-file-share-data-response.ts";
+import {GetFileResponse} from "../../features/file-storage/types/get-file-response.ts";
 
 export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '') => {
     const getUploadedFiles = async (): Promise<GetUploadedFilesResponse> => {
@@ -20,9 +24,21 @@ export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '
         return response.data;
     };
 
-    const getUploadedDirectoryFiles = async (directoryId: string): Promise<GetUploadedFilesResponse> => {
+    const getAllDirectoryFiles = async (directoryId: string): Promise<GetUploadedFilesResponse> => {
         const response: AxiosResponse<GetUploadedFilesResponse> =
-            await client.get(`${urlPath}uploaded/directory?directoryId=${directoryId}`);
+            await client.get(`${urlPath}directory/${directoryId}/files/all`);
+        return response.data;
+    };
+
+    const getAllDirectoryUploadedFiles = async (directoryId: string): Promise<GetUploadedFilesResponse> => {
+        const response: AxiosResponse<GetUploadedFilesResponse> =
+            await client.get(`${urlPath}directory/${directoryId}/files/uploaded`);
+        return response.data;
+    };
+
+    const getAllDirectorySharedFiles = async (directoryId: string): Promise<GetUploadedFilesResponse> => {
+        const response: AxiosResponse<GetUploadedFilesResponse> =
+            await client.get(`${urlPath}directory/${directoryId}/files/shared`);
         return response.data;
     };
 
@@ -66,8 +82,28 @@ export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '
         return response.data;
     };
 
+    const getFile = async (fileId: string): Promise<GetFileResponse> => {
+        const response: AxiosResponse<GetFileResponse> = await client.get(`${urlPath}${fileId}`);
+        return response.data;
+    };
+
     const updateFileIndex = async (updateFileIndex: UpdateFileIndex): Promise<BaseApiResponse> => {
         const response: AxiosResponse<BaseApiResponse> = await client.post(`${urlPath}files/update-index`, updateFileIndex);
+        return response.data;
+    };
+
+    const createOrUpdateFileShareRequest = async (createOrUpdateFileShareRequest: CreateOrUpdateFileShareRequest): Promise<BaseApiResponse> => {
+        const response: AxiosResponse<BaseApiResponse> = await client.post(`${urlPath}file-share-requests`, createOrUpdateFileShareRequest);
+        return response.data;
+    };
+
+    const resolveFileShareRequest = async (resolveFileShareRequest: ResolveFileShareRequest): Promise<BaseApiResponse> => {
+        const response: AxiosResponse<BaseApiResponse> = await client.patch(`${urlPath}file-share-requests/resolve`, resolveFileShareRequest);
+        return response.data;
+    };
+
+    const getFileShareData = async (fileId: string): Promise<GetFileShareDataResponse> => {
+        const response: AxiosResponse<GetFileShareDataResponse> = await client.get(`${urlPath}file-share/${fileId}`);
         return response.data;
     };
 
@@ -96,10 +132,16 @@ export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '
         getFileTypes,
         getFileCategories,
         createDirectory,
-        getUploadedDirectoryFiles,
+        getAllDirectoryFiles,
         updateFileIndex,
         deleteFile,
         renameFile,
-        getFileHistory
+        getFileHistory,
+        getAllDirectoryUploadedFiles,
+        getAllDirectorySharedFiles,
+        createOrUpdateFileShareRequest,
+        resolveFileShareRequest,
+        getFileShareData,
+        getFile
     };
 })(BaseApiClient, 'file-storage/');

@@ -9,6 +9,7 @@ interface Props {
     onUserDeselect: (userId: string) => void;
     selectedUsers: GetUser[];
     placeholder?: string;
+    excludedUserIds?: string[];
 }
 
 export const UserSearchField: FC<Props> = ({
@@ -16,6 +17,7 @@ export const UserSearchField: FC<Props> = ({
                                                onUserDeselect,
                                                selectedUsers,
                                                placeholder = "Search users...",
+                                               excludedUserIds
                                            }) => {
     const [query, setQuery] = useState("");
     const [results, setResults] = useState<GetUser[]>([]);
@@ -69,6 +71,10 @@ export const UserSearchField: FC<Props> = ({
 
     const handleSelect = (user: GetUser) => {
         const isAlreadySelected = selectedUsers.some((u) => u.id === user.id);
+        const isExcluded = excludedUserIds?.includes(user.id);
+
+        if (isExcluded) return;
+
         if (isAlreadySelected) {
             onUserDeselect(user.id);
         } else {

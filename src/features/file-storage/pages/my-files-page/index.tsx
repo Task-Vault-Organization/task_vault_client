@@ -9,22 +9,51 @@ import { Breadcrumbs } from "../../../../shared/components/reusable/bread-crumbs
 import { Spinner } from "../../../../shared/components/reusable/loading/spinner";
 import { EmptyCollectionPlaceholder } from "../../../../shared/components/reusable/empty-collection-placeholder";
 import { ImFilesEmpty } from "react-icons/im";
+import { FaLayerGroup, FaCloudUploadAlt, FaShareAlt, FaThLarge, FaTh, FaBars } from "react-icons/fa";
 import { useDirectoriesStore } from "../../../../shared/stores/directories-store.ts";
 import { useParams } from "react-router";
+import { useAuthenticationStore } from "../../../authentication/stores/authentication-store.ts";
+import { AuthenticationState } from "../../../authentication/types/authentication-state.ts";
+
+const VIEW_TYPE_KEY = "fileViewType";
+const DISPLAY_MODE_KEY = "fileDisplayMode";
+
+const VIEW_OPTIONS = [
+    { key: "all", label: "All", icon: <FaLayerGroup className="mr-1" /> },
+    { key: "uploaded", label: "Uploaded", icon: <FaCloudUploadAlt className="mr-1" /> },
+    { key: "shared", label: "Shared with me", icon: <FaShareAlt className="mr-1" /> },
+];
+
+const DISPLAY_OPTIONS = [
+    { key: "1", icon: <FaBars /> },
+    { key: "2", icon: <FaThLarge /> },
+    { key: "3", icon: <FaTh /> },
+];
 
 export const MyFilesPage: FC = () => {
     const [files, setFiles] = useState<GetFile[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
+    const [viewType, setViewType] = useState<string>(localStorage.getItem(VIEW_TYPE_KEY) || "all");
+    const [displayMode, setDisplayMode] = useState<string>(localStorage.getItem(DISPLAY_MODE_KEY) || "1");
 
     const { folderId } = useParams();
     const { goTo } = useDirectoriesStore();
+    const user = useAuthenticationStore((state: AuthenticationState) => state.user);
 
     const fetchFiles = async () => {
         try {
             setLoading(true);
-            const data = folderId !== "root"
-                ? await FileStorageApiClient.getUploadedDirectoryFiles(folderId)
-                : await FileStorageApiClient.getUploadedDirectoryFiles("");
+            const directoryId = folderId !== "root" ? folderId : user.rootDirectoryId;
+            let data;
+
+            if (viewType === "uploaded") {
+                data = await FileStorageApiClient.getAllDirectoryUploadedFiles(directoryId);
+            } else if (viewType === "shared") {
+                data = await FileStorageApiClient.getAllDirectorySharedFiles(directoryId);
+            } else {
+                data = await FileStorageApiClient.getAllDirectoryFiles(directoryId);
+            }
+
             setFiles(data.files);
         } catch (error) {
             console.error("Error fetching files:", error);
@@ -42,19 +71,64 @@ export const MyFilesPage: FC = () => {
         } else {
             goTo(folderId);
         }
-    }, [folderId]);
+    }, [folderId, viewType]);
 
     const handleCreateFolder = async () => {
         await fetchFiles();
     };
 
     const handleUpload = async () => {
+        setViewType("uploaded");
+        localStorage.setItem(VIEW_TYPE_KEY, "uploaded");
         await fetchFiles();
     };
 
+    const handleViewChange = (type: string) => {
+        setViewType(type);
+        localStorage.setItem(VIEW_TYPE_KEY, type);
+    };
+
+    const handleDisplayChange = (mode: string) => {
+        setDisplayMode(mode);
+        localStorage.setItem(DISPLAY_MODE_KEY, mode);
+    };
+
     return (
-        <div className="mx-auto space-y-6 mb-10 container">
+        <div className="mx-auto space-y-6 mb-10 container px-4 sm:px-10">
             <h2 className="text-2xl font-semibold text-center text-white">My Files</h2>
+
+            <div className="border-b border-gray-800 py-2">
+                <div className="flex justify-between items-center">
+                    <div className="rounded-lg gap-2 flex shadow-inner text-white">
+                        {VIEW_OPTIONS.map(({ key, label, icon }) => (
+                            <button
+                                key={key}
+                                onClick={() => handleViewChange(key)}
+                                className={`px-4 font-medium py-2 text-sm flex items-center rounded-lg transition-all duration-300 ${
+                                    viewType === key ? "bg-accent-2 text-white" : "hover:bg-gray-700"
+                                }`}
+                            >
+                                {icon}
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="rounded-lg flex space-x-1 p-1 shadow-inner text-white">
+                        {DISPLAY_OPTIONS.map(({ key, icon }) => (
+                            <button
+                                key={key}
+                                onClick={() => handleDisplayChange(key)}
+                                className={`p-2 rounded-lg transition-all duration-300 ${
+                                    displayMode === key ? "bg-accent-2 text-white" : "hover:bg-gray-700"
+                                }`}
+                            >
+                                {icon}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
             {loading ? (
                 <div className="flex justify-center items-center h-64">
                     <Spinner />
@@ -69,10 +143,17 @@ export const MyFilesPage: FC = () => {
                 <>
                     <Breadcrumbs />
                     <div className="flex flex-col items-center space-y-4 w-full">
-                        <FileListComponent files={files} setFiles={setFiles} setLoading={setLoading} fetchFiles={fetchFiles} />
+                        <FileListComponent
+                            files={files}
+                            setFiles={setFiles}
+                            setLoading={setLoading}
+                            fetchFiles={fetchFiles}
+                            displayMode={displayMode}
+                        />
                     </div>
                 </>
             )}
+
             <ToolbarToggle
                 setLoading={setLoading}
                 uploadContent={<FileUpload onUpload={handleUpload} setLoading={setLoading} />}
