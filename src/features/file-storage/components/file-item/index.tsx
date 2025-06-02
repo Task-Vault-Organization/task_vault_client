@@ -2,7 +2,7 @@ import React, { FC, useState, useRef, useEffect } from "react";
 import { GetFile } from "../../types/get-file.ts";
 import { FileIcon, defaultStyles } from "react-file-icon";
 import { FiDownload, FiShare2, FiEdit2, FiTrash2 } from "react-icons/fi";
-import { FaFolder, FaHistory, FaShareAlt, FaCrown } from "react-icons/fa";
+import { FaFolder, FaHistory, FaShareAlt } from "react-icons/fa";
 import { getFileExtension } from "../../../../shared/helpers/file-helpers.ts";
 import { FileViewerModal } from "../../../../shared/components/modals/file-viewer-modal";
 import { FileStorageApiClient } from "../../../../api/clients/file-storage-api-client.ts";
@@ -168,7 +168,7 @@ export const FileItem: FC<FileItemProps> = ({ file, setLoading, fetchFiles, file
             <div
                 onContextMenu={handleContextMenu}
                 onDoubleClick={handleDoubleClick}
-                className={`${isSharedWithMe ? "bg-blue-900/60" : "dark:bg-accent-1"} py-4 px-4 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 rounded-lg transition-colors duration-200 cursor-pointer bg-blue-50 hover:bg-blue-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white border border-gray-700`}
+                className={`${isSharedWithMe ? "bg-blue-900/60" : "dark:bg-accent-1"} h-full flex flex-col justify-between py-4 px-4 sm:flex-row sm:items-center gap-4 sm:gap-6 rounded-lg transition-colors duration-200 cursor-pointer bg-blue-50 hover:bg-blue-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white border border-gray-700`}
             >
                 <div className="w-10 h-10 flex-shrink-0 mx-auto sm:mx-0 flex items-center justify-center">
                     {isDirectory ? (
@@ -195,15 +195,14 @@ export const FileItem: FC<FileItemProps> = ({ file, setLoading, fetchFiles, file
                                 style={{ minWidth: "1ch" }}
                             />
                             <span ref={spanRef} className="absolute invisible whitespace-pre font-medium px-1 py-0.5">
-                                {editedName || " "}
-                            </span>
+                {editedName || " "}
+              </span>
                         </div>
                     ) : (
                         <p className="font-medium truncate flex items-center justify-center sm:justify-start gap-3">
                             {file.name}
                         </p>
                     )}
-
                     <div className="flex flex-wrap justify-center sm:justify-start items-center gap-x-4 text-sm text-gray-500 dark:text-gray-400">
                         <span>{formattedSize}</span>
                         <span>•</span>
@@ -233,14 +232,9 @@ export const FileItem: FC<FileItemProps> = ({ file, setLoading, fetchFiles, file
                 <Item id="delete" onClick={handleItemClick}>
                     <FiTrash2 className="inline mr-2" style={{ color: "#fff", fontSize: ".9em" }} />
                     <span style={{ color: "#fff", fontSize: ".9em" }}>
-                        {
-                            file.uploaderId === user.id ?
-                                "Delete" :
-                                "Remove shared file"
-                        }
-                    </span>
+            {file.uploaderId === user.id ? "Delete" : "Remove shared file"}
+          </span>
                 </Item>
-
                 <Item id="download" onClick={handleItemClick}>
                     <FiDownload className="inline mr-2" style={{ color: "#fff", fontSize: ".9em" }} />
                     <span style={{ color: "#fff", fontSize: ".9em" }}>Download</span>

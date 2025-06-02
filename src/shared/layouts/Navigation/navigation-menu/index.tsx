@@ -5,12 +5,17 @@ import { AuthenticationState } from "../../../../features/authentication/types/a
 import { menuItemsConfig } from "../../../../config/menu-items.ts";
 import { Dropdown } from "../../../components/reusable/dropdown";
 import { AuthenticationService } from "../../../../features/authentication/services/authentication-service.ts";
-import {Link} from "react-router";
+import { Link } from "react-router";
+import { NotificationRenderer } from "../../../../features/notifications/components/notification-renderer.tsx";
+import { useNotificationStore } from "../../../../features/notifications/stores/notifications-store.ts";
 
 export function NavigationMenu() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
     const isAuthenticated = useAuthenticationStore((state: AuthenticationState) => state.isAuthenticated);
+    const unreadCount = useNotificationStore((state) =>
+        state.initialNotifications.filter(n => n.notificationStatusId === 1).length
+    );
 
     const { authenticatedMenuItemList, unauthenticatedMenuItemList } = menuItemsConfig;
     const menuItemsList = isAuthenticated ? authenticatedMenuItemList : unauthenticatedMenuItemList;
@@ -19,7 +24,6 @@ export function NavigationMenu() {
         const handleScroll = () => {
             setIsScrolled(window.scrollY > 10);
         };
-
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
@@ -63,27 +67,41 @@ export function NavigationMenu() {
     function renderUserSection() {
         return (
             <>
-                <div className="mr-3 absolute right-0 pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
-                    <button type="button" className="relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800 focus:outline-none">
-                        <span className="sr-only">View notifications</span>
-                        <svg className="size-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" aria-hidden="true">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
-                        </svg>
-                    </button>
+                <div className="mr-3 absolute right-10 pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0 cursor-pointer">
+                    <Dropdown
+                        buttonContent={
+                            <div className="relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white cursor-pointer">
+                                <svg className="size-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
+                                </svg>
+                                {unreadCount > 0 && (
+                                    <span className="absolute -bottom-2 -right-2 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-red-500 rounded-full shadow-sm">
+                                        {unreadCount}
+                                    </span>
+                                )}
+                            </div>
+                        }
+                        showArrow={false}
+                        buttonClassName="p-1 bg-gray-800 rounded-full text-gray-400 hover:text-white"
+                    >
+                        <NotificationRenderer />
+                    </Dropdown>
                 </div>
+
                 <Dropdown buttonContent={renderProfile()}>
-                    <a href="#" className="block px-4 py-2 text-sm text-text-primary" role="menuitem" tabIndex="-1" id="menu-item-0">Account settings</a>
-                    <a href="#" className="block px-4 py-2 text-sm text-text-primary" role="menuitem" tabIndex="-1" id="menu-item-1">Support</a>
-                    <a href="#" className="block px-4 py-2 text-sm text-text-primary" role="menuitem" tabIndex="-1" id="menu-item-2">License</a>
-                    <a onClick={AuthenticationService.logoutUser} className="cursor-pointer block px-4 py-2 text-sm text-text-primary" role="menuitem" tabIndex="-1" id="menu-item-3">Sign Out</a>
+                    <div className={"py-2 px-3 bg-accent-2 rounded-lg"}>
+                        <a href="#" className="block px-4 py-2 text-sm text-text-primary">Account settings</a>
+                        <a href="#" className="block px-4 py-2 text-sm text-text-primary">Support</a>
+                        <a href="#" className="block px-4 py-2 text-sm text-text-primary">License</a>
+                        <a onClick={AuthenticationService.logoutUser} className="cursor-pointer block px-4 py-2 text-sm text-text-primary">Sign Out</a>
+                    </div>
                 </Dropdown>
             </>
         );
     }
 
     return (
-        <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ease-in-out
-            ${isScrolled ? 'h-14 bg-gray-900 shadow-lg' : 'h-20 bg-transparent'}`}>
+        <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ease-in-out ${isScrolled ? 'h-14 bg-gray-900 shadow-lg' : 'h-20 bg-transparent'}`}>
             <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8 h-full">
                 <div className="relative flex h-full items-center justify-between transition-all duration-500 ease-in-out">
                     <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
