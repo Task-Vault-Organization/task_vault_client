@@ -1,6 +1,6 @@
 import { FC, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { FaUserPlus } from "react-icons/fa";
+import { FaUserPlus, FaEnvelope, FaLock, FaUser } from "react-icons/fa";
 import { TitleWithIcon } from "../../../../shared/components/reusable/title-with-icon";
 import { AuthenticationService } from "../../services/authentication-service.ts";
 import { Form } from "../../../../shared/components/forms/form";
@@ -8,6 +8,7 @@ import { Form } from "../../../../shared/components/forms/form";
 interface IFormInput {
     email: string;
     password: string;
+    fullName: string;
 }
 
 const fieldConfigs = [
@@ -17,6 +18,7 @@ const fieldConfigs = [
         type: "email",
         placeholder: "name@company.com",
         autoComplete: "off",
+        icon: FaEnvelope,
         validation: {
             required: "Email is required",
             pattern: {
@@ -26,11 +28,27 @@ const fieldConfigs = [
         },
     },
     {
+        name: "fullName",
+        label: "Full name",
+        type: "text",
+        placeholder: "Full name",
+        autoComplete: "off",
+        icon: FaUser,
+        validation: {
+            required: "Full name is required",
+            pattern: {
+                value: /^[a-zA-Z\s'-]+$/,
+                message: "The name contains unsupported characters",
+            },
+        },
+    },
+    {
         name: "password",
         label: "Password",
         type: "password",
         placeholder: ". . . . . . . .",
         autoComplete: "new-password",
+        icon: FaLock,
         validation: {
             required: "Password is required",
             minLength: {

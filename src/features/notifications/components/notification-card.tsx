@@ -2,6 +2,8 @@ import { FC } from "react";
 import { GetNotification } from "../types/get-notification";
 import { AcceptFileShareNotificationContent } from "../types/accept-file-share-notification-content";
 import { NotificationsApiClient } from "../../../api/clients/notification-api-client.ts";
+import {ResolveFileShareRequest} from "../../file-storage/types/resolve-file-share-request.ts";
+import {FileStorageApiClient} from "../../../api/clients/file-storage-api-client.ts";
 
 interface Props {
     notification: GetNotification;
@@ -9,14 +11,30 @@ interface Props {
 }
 
 export const NotificationCard: FC<Props> = ({ notification, isLast = false }) => {
-    const handleAccept = async () => {
-        await NotificationsApiClient.markNotificationAsSeen(notification.id);
-        console.log("Accepted file share");
+    const handleAccept = async (fileShareRequestId: string) => {
+        try {
+            const request: ResolveFileShareRequest = {
+                fileShareRequestId,
+                responseStatusId: 2
+            }
+            await FileStorageApiClient.resolveFileShareRequest(request);
+            await NotificationsApiClient.markNotificationAsSeen(notification.id);
+        } catch (error: any) {
+            console.error(error);
+        }
     };
 
-    const handleDecline = async () => {
-        await NotificationsApiClient.markNotificationAsSeen(notification.id);
-        console.log("Declined file share");
+    const handleDecline = async (fileShareRequestId: string) => {
+        try {
+            const request: ResolveFileShareRequest = {
+                fileShareRequestId,
+                responseStatusId: 3
+            }
+            await FileStorageApiClient.resolveFileShareRequest(request);
+            await NotificationsApiClient.markNotificationAsSeen(notification.id);
+        } catch (error: any) {
+            console.error(error);
+        }
     };
 
     const formattedDate = new Date(notification.createdAt).toLocaleDateString("en-US", {
@@ -38,13 +56,13 @@ export const NotificationCard: FC<Props> = ({ notification, isLast = false }) =>
                 </p>
                 <div className="flex gap-4">
                     <button
-                        onClick={handleAccept}
+                        onClick={() => handleAccept(parsed.FileShareRequestId)}
                         className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition"
                     >
                         Accept
                     </button>
                     <button
-                        onClick={handleDecline}
+                        onClick={() => handleDecline(parsed.FileShareRequestId)}
                         className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-700 transition"
                     >
                         Decline

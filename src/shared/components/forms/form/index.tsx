@@ -17,6 +17,7 @@ export interface FormFieldConfig {
     validation?: object;
     customRender?: () => ReactNode;
     autoFocus?: boolean;
+    icon?: React.ComponentType<{ className?: string }>;
 }
 
 export interface FormRef {
@@ -121,6 +122,7 @@ export const Form = forwardRef<FormRef, FormProps<any>>(function Form<T extends 
                                 autoComplete={field.autoComplete}
                                 name={field.name}
                                 id={field.name}
+                                icon={field.icon}
                                 {...commonProps}
                                 {...register(field.name as any, field.validation)}
                             />
@@ -136,6 +138,7 @@ export const Form = forwardRef<FormRef, FormProps<any>>(function Form<T extends 
                                 autoComplete={field.autoComplete}
                                 name={field.name}
                                 id={field.name}
+                                icon={field.icon}
                                 {...commonProps}
                                 {...register(field.name as any, field.validation)}
                             />
