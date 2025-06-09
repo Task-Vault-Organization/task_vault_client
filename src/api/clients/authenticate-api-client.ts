@@ -7,6 +7,7 @@ import {CreateUser} from "../../features/authentication/types/create-user.ts";
 import {AuthenticateUser} from "../../features/authentication/types/authenticate-user.ts";
 import {AuthenticateUserResponse} from "../../features/authentication/types/authenticate-user-response.ts";
 import {GetUserResponse} from "../../shared/types/get-user-response.ts";
+import {AuthenticateUserGoogle} from "../../features/authentication/types/authenticate-user-google.ts";
 
 export const AuthenticateApiClient = ((client: AxiosInstance, urlPath: string = '') => {
     const createUser = async (createUser: CreateUser): Promise<BaseApiResponse> => {
@@ -21,6 +22,12 @@ export const AuthenticateApiClient = ((client: AxiosInstance, urlPath: string = 
             return response.data;
     };
 
+    const authenticateUserGoogle = async (authenticateUserGoogle: AuthenticateUserGoogle): Promise<AuthenticateUserResponse> => {
+        const response: AxiosResponse<AuthenticateUserResponse> =
+            await client.post(`${urlPath}google`, authenticateUserGoogle);
+        return response.data;
+    };
+
     const getUser = async (): Promise<GetUserResponse> => {
         const response: AxiosResponse<GetUserResponse> =
             await client.get(`${urlPath}you`);
@@ -33,6 +40,7 @@ export const AuthenticateApiClient = ((client: AxiosInstance, urlPath: string = 
         ...CrudApiClient(client, urlPath),
         createUser,
         authenticateUser,
-        getUser
+        getUser,
+        authenticateUserGoogle
     };
 })(BaseApiClient, 'authenticate/');

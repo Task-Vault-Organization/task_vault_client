@@ -109,10 +109,15 @@ export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '
 
     const uploadFile = async (uploadFile: UploadFile): Promise<any> => {
         const formData = new FormData();
-        formData.append("file", uploadFile.file);
+
+        uploadFile.files.forEach((file) => {
+            formData.append("files", file);
+        });
+
         if (uploadFile.directoryId) {
-            formData.append("directoryId", uploadFile.directoryId);
+            formData.append("DirectoryId", uploadFile.directoryId);
         }
+
 
         const response: AxiosResponse<any> = await client.post(`${urlPath}upload`, formData, {
             headers: {

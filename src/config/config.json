@@ -1,5 +1,6 @@
 {
   "API_BASE_URL": "https://localhost:44368/api/",
   "SIGNALR_BASE_URL": "https://localhost:44368/notificationHub",
-  "ALERTS_TIMEOUT": 5000
+  "ALERTS_TIMEOUT": 5000,
+  "GOOGLE_OAUTH_CLIENT_ID": "619168613236-kgk2u0ihd6dkrimkfg3j5un8bn7um2p2.apps.googleusercontent.com"
 }

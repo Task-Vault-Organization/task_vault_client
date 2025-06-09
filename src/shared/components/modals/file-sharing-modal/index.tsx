@@ -130,7 +130,7 @@ export const FileSharingModal: FC<FileSharingModalProps> = ({
                     statusId === 1 ? 0 : statusId === 3 ? 2 : 1;
                 return getPriority(a.status?.id) - getPriority(b.status?.id);
             })
-            .map((item) => {
+            .map((item, index: number) => {
                 const statusId = item.status?.id;
                 const isPending = statusId === 1;
                 const isDenied = statusId === 3;
@@ -152,7 +152,7 @@ export const FileSharingModal: FC<FileSharingModalProps> = ({
 
                 return (
                     <div
-                        key={item.userId}
+                        key={index}
                         className={`relative flex items-center justify-between p-3 rounded-lg mb-2 ${baseColor} ${overlayStyle}`}
                     >
                         <div className="flex items-center gap-3 z-10">

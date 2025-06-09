@@ -14,7 +14,7 @@ export const NotificationsApiClient = ((client: AxiosInstance, urlPath: string =
 
     const markNotificationAsSeen = async (notificationId: string): Promise<BaseApiResponse> => {
         const response: AxiosResponse<BaseApiResponse> =
-            await client.get(`${urlPath}${notificationId}/seen`);
+            await client.patch(`${urlPath}${notificationId}/seen`);
         return response.data;
     };
 

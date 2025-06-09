@@ -1,4 +1,4 @@
 export type UploadFile = {
-    file: File,
+    files: File[],
     directoryId?: string
 }

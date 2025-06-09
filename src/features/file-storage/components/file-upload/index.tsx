@@ -5,8 +5,8 @@ import { showAlert } from "../../../../shared/helpers/alerts-helpers.ts";
 import { Button } from "../../../../shared/components/reusable/buttons/button";
 import { UploadFile } from "../../types/upload-file.ts";
 import { useParams } from "react-router";
-import {useAuthenticationStore} from "../../../authentication/stores/authentication-store.ts";
-import {AuthenticationState} from "../../../authentication/types/authentication-state.ts";
+import { useAuthenticationStore } from "../../../authentication/stores/authentication-store.ts";
+import { AuthenticationState } from "../../../authentication/types/authentication-state.ts";
 
 interface FileUploadProps {
     setLoading?: (loading: boolean) => void;
@@ -15,29 +15,28 @@ interface FileUploadProps {
     onUpload?: () => void;
 }
 
-export function FileUpload({ setLoading, onSuccess, onError, onUpload }: FileUploadProps) {
-    const [file, setFile] = useState<File | null>(null);
+export function FileUpload({ onSuccess, onError, onUpload }: FileUploadProps) {
+    const [files, setFiles] = useState<File[]>([]);
     const [uploading, setUploading] = useState(false);
-    const [message, setMessage] = useState("");
     const [isDragOver, setIsDragOver] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { folderId } = useParams();
-
     const user = useAuthenticationStore((state: AuthenticationState) => state.user);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files && event.target.files.length > 0) {
-            setFile(event.target.files[0]);
+        if (event.target.files) {
+            const selectedFiles = Array.from(event.target.files).slice(0, 5);
+            setFiles(selectedFiles);
         }
     };
 
     const handleDrop = (event: React.DragEvent<HTMLLabelElement>) => {
         event.preventDefault();
         setIsDragOver(false);
-        const droppedFiles = event.dataTransfer.files;
-        if (droppedFiles && droppedFiles.length > 0) {
-            setFile(droppedFiles[0]);
+        const droppedFiles = Array.from(event.dataTransfer.files).slice(0, 5);
+        if (droppedFiles.length > 0) {
+            setFiles(droppedFiles);
         }
     };
 
@@ -51,30 +50,25 @@ export function FileUpload({ setLoading, onSuccess, onError, onUpload }: FileUpl
     };
 
     const handleUpload = async () => {
-        if (!file) {
-            setMessage("Please select a file to upload.");
+        if (files.length === 0) {
             return;
         }
 
         setUploading(true);
-        setMessage("");
 
         const uploadData: UploadFile = {
-            file,
+            files,
             directoryId: folderId !== "root" ? folderId : user.rootDirectoryId,
         };
 
         try {
-            const response = await FileStorageApiClient.uploadFile(uploadData);
-            const fileId = response.fileId;
-            onSuccess?.(fileId);
-            showAlert("success", "File uploaded successfully!");
-            setMessage("File uploaded successfully!");
-            setFile(null);
+            await FileStorageApiClient.uploadFile(uploadData);
+            onSuccess?.();
+            showAlert("success", "Files uploaded successfully!");
+            setFiles([]);
             if (fileInputRef.current) fileInputRef.current.value = "";
             onUpload?.();
         } catch (error) {
-            setMessage("File upload failed. Please try again.");
             onError?.(error);
         } finally {
             setUploading(false);
@@ -89,7 +83,7 @@ export function FileUpload({ setLoading, onSuccess, onError, onUpload }: FileUpl
             }}
             className="bg-gray-900 border border-gray-700 p-6 rounded-2xl space-y-6 shadow-2xl w-full mx-auto"
         >
-            <h2 className="text-xl font-semibold text-white">Upload File</h2>
+            <h2 className="text-xl font-semibold text-white">Upload Files</h2>
 
             <input
                 ref={fileInputRef}
@@ -97,6 +91,8 @@ export function FileUpload({ setLoading, onSuccess, onError, onUpload }: FileUpl
                 onChange={handleFileChange}
                 className="hidden"
                 id="file-upload"
+                multiple
+                accept="*"
             />
 
             <label
@@ -110,18 +106,20 @@ export function FileUpload({ setLoading, onSuccess, onError, onUpload }: FileUpl
             >
                 <UploadCloud className="w-10 h-10 text-gray-300" />
                 <span className="mt-2 text-gray-300">
-                    {isDragOver ? "Drop the file here" : "Click or drag a file here to upload"}
+                    {isDragOver ? "Drop the files here" : "Click or drag up to 5 files here to upload"}
                 </span>
             </label>
 
-            {file && (
-                <p className="text-sm text-gray-300 text-center truncate">
-                    Selected file: <span className="font-medium">{file.name}</span>
-                </p>
+            {files.length > 0 && (
+                <ul className="text-sm text-gray-300 text-center space-y-1 max-h-32 overflow-y-auto">
+                    {files.map((file, index) => (
+                        <li key={index} className="truncate">{file.name}</li>
+                    ))}
+                </ul>
             )}
 
             <div className="flex justify-end">
-                <Button type="submit" disabled={uploading || !file} loading={uploading}>
+                <Button type="submit" disabled={uploading || files.length === 0} loading={uploading}>
                     Upload
                 </Button>
             </div>

@@ -1,73 +1,49 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import { GetNotification } from "../types/get-notification.ts";
 
-interface NotificationStore {
-    queue: GetNotification[];
-    current: GetNotification | null;
-    addNotification: (notification: GetNotification) => void;
-    enqueueNotification: (notification: GetNotification) => void;
-    nextNotification: () => void;
-    clearCurrent: () => void;
-    initialNotifications: GetNotification[];
-    setInitialNotifications: (notifications: GetNotification[]) => void;
+export interface NotificationState {
+    notifications: GetNotification[],
+    queue: GetNotification[],
+    current: GetNotification | null,
+    addNotification: (notification: GetNotification) => void,
+    setInitialNotifications: (initialNotifications: GetNotification[]) => void,
+    shiftQueue: () => void
 }
 
-export const useNotificationStore = create<NotificationStore>()(
-    persist(
-        (set, get) => ({
-            queue: [],
-            current: null,
-            initialNotifications: [],
+export const useNotificationStore = create<NotificationState>((set, get) => ({
+    notifications: [],
+    queue: [],
+    current: null,
+    setInitialNotifications: (initialNotifications: GetNotification[]) => {
+        const existing = get().notifications;
+        const merged = [
+            ...initialNotifications.filter(n => !existing.some(e => e.id === n.id)),
+            ...existing
+        ];
+        set({ notifications: merged });
+    },
+    addNotification: (notification: GetNotification) => {
+        const state = get();
+        if (!state.notifications.find(n => n.id === notification.id)) {
+            const newQueue = [...state.queue, notification];
+            const shouldShowNow = !state.current;
 
-            addNotification: (notification: GetNotification) => {
-                const state = get();
+            set({
+                notifications: [notification, ...state.notifications],
+                queue: newQueue
+            });
 
-                const alreadyExists =
-                    state.queue.some(n => n.id === notification.id) ||
-                    (state.current?.id === notification.id);
-
-                if (alreadyExists) return;
-
-                set({
-                    initialNotifications: [notification, ...state.initialNotifications],
-                });
-
-                get().enqueueNotification(notification);
-            },
-
-            enqueueNotification: (notification: GetNotification) => {
-                const { current, queue } = get();
-
-                if (!current) {
-                    set({ current: notification });
-                } else {
-                    set({ queue: [...queue, notification] });
-                }
-            },
-
-            nextNotification: () => {
-                const { queue } = get();
-                if (queue.length > 0) {
-                    const [next, ...rest] = queue;
-                    set({ current: next, queue: rest });
-                } else {
-                    set({ current: null });
-                }
-            },
-
-            clearCurrent: () => set({ current: null }),
-
-            setInitialNotifications: (notifications: GetNotification[]) =>
-                set({ initialNotifications: notifications }),
-        }),
-        {
-            name: "notification-store",
-            partialize: (state) => ({
-                queue: state.queue,
-                current: state.current,
-                initialNotifications: state.initialNotifications,
-            }),
+            if (shouldShowNow) {
+                get().shiftQueue();
+            }
         }
-    )
-);
+    },
+    shiftQueue: () => {
+        const state = get();
+        const [next, ...rest] = state.queue;
+        set({
+            current: next || null,
+            queue: rest
+        });
+    }
+}));

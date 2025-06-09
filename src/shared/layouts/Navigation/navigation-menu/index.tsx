@@ -7,14 +7,17 @@ import { Dropdown } from "../../../components/reusable/dropdown";
 import { AuthenticationService } from "../../../../features/authentication/services/authentication-service.ts";
 import { Link } from "react-router";
 import { NotificationRenderer } from "../../../../features/notifications/components/notification-renderer.tsx";
-import { useNotificationStore } from "../../../../features/notifications/stores/notifications-store.ts";
+import {
+    NotificationState,
+    useNotificationStore
+} from "../../../../features/notifications/stores/notifications-store.ts";
 
 export function NavigationMenu() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
     const isAuthenticated = useAuthenticationStore((state: AuthenticationState) => state.isAuthenticated);
-    const unreadCount = useNotificationStore((state) =>
-        state.initialNotifications.filter(n => n.notificationStatusId === 1).length
+    const unreadCount = useNotificationStore((state: NotificationState) =>
+        state.notifications.filter(n => n.notificationStatusId === 1).length
     );
 
     const { authenticatedMenuItemList, unauthenticatedMenuItemList } = menuItemsConfig;

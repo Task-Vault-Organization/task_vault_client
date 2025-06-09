@@ -1,4 +1,4 @@
-import { FC, ReactNode, InputHTMLAttributes } from 'react';
+import { FC, ReactNode, InputHTMLAttributes } from "react";
 import { FieldError } from "react-hook-form";
 
 interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -7,22 +7,26 @@ interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
     labelText: ReactNode | string;
     required?: boolean;
     error?: FieldError;
+    icon?: React.ComponentType<{ className?: string }>;
 }
 
 export const FormField: FC<FormFieldProps> = ({
-  value,
-  setValue,
-  labelText,
-  error,
-  required,
-  ...rest
-}) => {
-    const inputClasses = `
+                                                  value,
+                                                  setValue,
+                                                  labelText,
+                                                  error,
+                                                  required,
+                                                  icon: Icon,
+                                                  ...rest
+                                              }) => {
+    const baseClasses = `
         w-full p-2.5 rounded-lg border text-sm transition
         ${error
-        ? 'bg-red-50 border-red-300 text-red-800 placeholder-red-400 focus:ring-red-300 focus:border-red-400'
-        : 'bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-600'}
+        ? "bg-red-50 border-red-300 text-red-800 placeholder-red-400 focus:ring-red-300 focus:border-red-400"
+        : "bg-gray-800 border-gray-700 text-white placeholder-gray-400 focus:ring-blue-500 focus:border-blue-600"}
     `;
+
+    const inputClasses = Icon ? `${baseClasses} pl-10` : baseClasses;
 
     return (
         <div className="mb-4">
@@ -30,13 +34,20 @@ export const FormField: FC<FormFieldProps> = ({
                 {labelText}
                 {required && <span className="text-red-400 ml-1">*</span>}
             </label>
-            <input
-                {...rest}
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                className={inputClasses}
-                placeholder={typeof labelText === 'string' ? labelText : undefined}
-            />
+            <div className="relative">
+                {Icon && (
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                        <Icon className="w-5 h-5" />
+                    </div>
+                )}
+                <input
+                    {...rest}
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                    className={inputClasses}
+                    placeholder={typeof labelText === "string" ? labelText : undefined}
+                />
+            </div>
             {error && (
                 <p className="mt-1 text-sm text-red-400">
                     {error.message || "This field is required."}

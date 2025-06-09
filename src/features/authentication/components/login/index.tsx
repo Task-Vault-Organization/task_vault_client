@@ -3,9 +3,12 @@ import { SubmitHandler } from "react-hook-form";
 import { AuthenticateUser } from "../../types/authenticate-user.ts";
 import { AuthenticationService } from "../../services/authentication-service.ts";
 import { Link } from "react-router";
-import { FaSignInAlt } from "react-icons/fa";
+import { FaSignInAlt, FaEnvelope, FaLock } from "react-icons/fa";
 import { TitleWithIcon } from "../../../../shared/components/reusable/title-with-icon";
-import {Form} from "../../../../shared/components/forms/form";
+import { Form } from "../../../../shared/components/forms/form";
+import { GoogleLogin } from "@react-oauth/google";
+import { showAlert } from "../../../../shared/helpers/alerts-helpers.ts";
+import { AuthenticateUserGoogle } from "../../types/authenticate-user-google.ts";
 
 interface LoginInput {
     email: string;
@@ -19,6 +22,7 @@ const fieldConfigs = [
         type: "email",
         placeholder: "name@company.com",
         autoComplete: "off",
+        icon: FaEnvelope,
         validation: {
             required: "Email is required",
             pattern: {
@@ -33,6 +37,7 @@ const fieldConfigs = [
         type: "password",
         placeholder: ". . . . . . . .",
         autoComplete: "new-password",
+        icon: FaLock,
         validation: {
             required: "Password is required",
             minLength: {
@@ -71,6 +76,26 @@ export const Login: FC = () => {
                         onSubmit={onSubmit}
                         loading={loading}
                         submitLabel="Log In"
+                    />
+
+                    <GoogleLogin
+                        onSuccess={async (credentialResponse) => {
+                            if (credentialResponse.credential) {
+                                const authenticateUserGoogle: AuthenticateUserGoogle = {
+                                    accessToken: credentialResponse.credential
+                                };
+                                setLoading(true);
+                                try {
+                                    await AuthenticationService.authenticateUserGoogle(authenticateUserGoogle);
+                                } catch (error) {
+                                } finally {
+                                    setLoading(false);
+                                }
+                            }
+                        }}
+                        onError={() => {
+                            showAlert("error", "Google Login Failed");
+                        }}
                     />
 
                     <div className="flex items-center justify-end mt-2">
