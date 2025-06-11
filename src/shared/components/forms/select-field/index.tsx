@@ -41,7 +41,6 @@ export const SelectField: FC<CustomSelectFieldProps> = ({
         <div className="space-y-1">
             <label className="block text-sm font-medium text-white mb-1">{labelText}</label>
 
-            {/* Wrapper with relative to position dropdown absolutely */}
             <div className="relative" ref={wrapperRef}>
                 <div
                     className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg p-2.5 cursor-pointer"
@@ -63,7 +62,7 @@ export const SelectField: FC<CustomSelectFieldProps> = ({
                             {options.map((opt) => (
                                 <div
                                     key={opt.id}
-                                    className={`px-4 py-2 cursor-pointer hover:bg-gray-600 ${
+                                    className={`text-white px-4 py-2 cursor-pointer hover:bg-gray-600 ${
                                         opt.id === value ? "bg-gray-700 font-medium" : ""
                                     }`}
                                     onClick={() => {

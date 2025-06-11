@@ -5,14 +5,43 @@ import { TasksApiClient } from "../../../../api/clients/tasks-api-client.ts";
 import { TaskList } from "../../components/task-list";
 import { EmptyCollectionPlaceholder } from "../../../../shared/components/reusable/empty-collection-placeholder";
 import { Spinner } from "../../../../shared/components/reusable/loading/spinner";
-import { FaUserEdit, FaUserCheck, FaTasks, FaPlus } from "react-icons/fa";
+import {
+    FaUserEdit,
+    FaUserCheck,
+    FaTasks,
+    FaPlus,
+    FaSortAmountDown,
+    FaSortAmountUp
+} from "react-icons/fa";
 import { Button } from "../../../../shared/components/reusable/buttons/button";
+import { SelectField } from "../../../../shared/components/forms/select-field";
+
+const statusOptions = [
+    { id: 0, name: "All" },
+    { id: 1, name: "Started" },
+    { id: 2, name: "Completed" }
+];
+
+const sortOptions = [
+    { id: 0, name: "Newest", icon: <FaSortAmountDown className="inline mr-1" /> },
+    { id: 1, name: "Oldest", icon: <FaSortAmountUp className="inline mr-1" /> }
+];
 
 export const TasksPage: FC = () => {
     const navigate = useNavigate();
+
     const [activeTab, setActiveTab] = useState<"owned" | "assigned">(
         (localStorage.getItem("taskTab") as "owned" | "assigned") || "owned"
     );
+
+    const [sortByIndex, setSortByIndex] = useState<number>(
+        Number(localStorage.getItem("sortByIndex")) || 0
+    );
+
+    const [filterBy, setFilterBy] = useState<number>(
+        Number(localStorage.getItem("filterBy")) || 0
+    );
+
     const [ownedTasks, setOwnedTasks] = useState<GetTask[]>([]);
     const [assignedTasks, setAssignedTasks] = useState<GetTask[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -23,20 +52,38 @@ export const TasksPage: FC = () => {
             setIsLoading(true);
             setError(null);
             try {
-                const response = activeTab === "owned"
-                    ? await TasksApiClient.getOwnedTasks()
-                    : await TasksApiClient.getAssignedTasks();
-                activeTab === "owned"
-                    ? setOwnedTasks(response.task || [])
-                    : setAssignedTasks(response.task || []);
-            } catch (err) {
+                const sortValue = sortByIndex === 0 ? "newest" : "oldest";
+                const statusFilter = statusOptions[filterBy].name.toLowerCase();
+                if (activeTab === "owned") {
+                    const res = await TasksApiClient.getOwnedTasks(sortValue, statusFilter);
+                    setOwnedTasks(res.tasks || []);
+                } else {
+                    const res = await TasksApiClient.getAssignedTasks(sortValue, statusFilter);
+                    setAssignedTasks(res.tasks || []);
+                }
+            } catch {
                 setError("Failed to fetch tasks. Please try again.");
             } finally {
                 setIsLoading(false);
             }
         };
         fetchTasks();
-    }, [activeTab]);
+    }, [activeTab, sortByIndex, filterBy]);
+
+    const handleTabChange = (tab: "owned" | "assigned") => {
+        setActiveTab(tab);
+        localStorage.setItem("taskTab", tab);
+    };
+
+    const handleSortChange = (index: number) => {
+        setSortByIndex(index);
+        localStorage.setItem("sortByIndex", index.toString());
+    };
+
+    const handleFilterChange = (val: number) => {
+        setFilterBy(val);
+        localStorage.setItem("filterBy", val.toString());
+    };
 
     const handleTaskClick = (taskId: string) => {
         navigate(`/task/${taskId}`);
@@ -47,48 +94,58 @@ export const TasksPage: FC = () => {
     };
 
     return (
-        <div className="mx-auto space-y-6 mb-10 max-w-4xl px-4 sm:px-10">
+        <div className="mx-auto space-y-6 mb-10 max-w-5xl px-4 sm:px-6">
             <h2 className="text-2xl font-semibold text-center text-white">My Tasks</h2>
+
             <div className="border-b border-gray-800 py-2">
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                    <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0 w-full sm:w-auto">
-                        <button
-                            onClick={() => {
-                                setActiveTab("owned");
-                                localStorage.setItem("taskTab", "owned");
-                            }}
-                            className={`px-4 py-2 rounded-md font-semibold flex items-center justify-center gap-2 transition-all ${
-                                activeTab === "owned"
-                                    ? "bg-accent-2 text-white shadow-md"
-                                    : "text-gray-400 hover:text-white hover:bg-accent-1"
-                            }`}
-                        >
-                            <FaUserEdit />
-                            Owned Tasks
-                        </button>
-                        <button
-                            onClick={() => {
-                                setActiveTab("assigned");
-                                localStorage.setItem("taskTab", "assigned");
-                            }}
-                            className={`px-4 py-2 rounded-md font-semibold flex items-center justify-center gap-2 transition-all ${
-                                activeTab === "assigned"
-                                    ? "bg-accent-2 text-white shadow-md"
-                                    : "text-gray-400 hover:text-white hover:bg-accent-1"
-                            }`}
-                        >
-                            <FaUserCheck />
-                            Assigned Tasks
-                        </button>
-                    </div>
-                    <div className="w-full sm:w-auto">
-                        <Button
-                            onClick={handleCreateTask}
-                            className="w-full sm:w-auto justify-center"
-                        >
-                            <FaPlus className="mr-1" />
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-wrap">
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => handleTabChange("owned")}
+                                className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center transition ${
+                                    activeTab === "owned" ? "bg-accent-2 text-white" : "hover:bg-gray-700 text-gray-300"
+                                }`}
+                            >
+                                <FaUserEdit className="mr-2" />
+                                Owned
+                            </button>
+                            <button
+                                onClick={() => handleTabChange("assigned")}
+                                className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center transition ${
+                                    activeTab === "assigned" ? "bg-accent-2 text-white" : "hover:bg-gray-700 text-gray-300"
+                                }`}
+                            >
+                                <FaUserCheck className="mr-2" />
+                                Assigned
+                            </button>
+                        </div>
+                        <Button onClick={handleCreateTask} className="sm:ml-4">
+                            <FaPlus className="mr-2" />
                             Create Task
                         </Button>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <div className="w-36">
+                            <SelectField
+                                labelText=""
+                                options={sortOptions.map((opt, i) => ({
+                                    id: i,
+                                    name: `${opt.icon ? opt.icon.props.className ? '' : '' : ''} ${opt.name}`,
+                                }))}
+                                value={sortByIndex}
+                                setValue={handleSortChange}
+                            />
+                        </div>
+                        <div className="w-36 ml-1">
+                            <SelectField
+                                labelText=""
+                                options={statusOptions}
+                                value={filterBy}
+                                setValue={handleFilterChange}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -101,7 +158,7 @@ export const TasksPage: FC = () => {
                 <EmptyCollectionPlaceholder
                     icon={<FaTasks />}
                     text={"No tasks found"}
-                    subtext={"Use the button above to create a new task"}
+                    subtext={"Use the toolbar above to create a new task"}
                 />
             ) : (
                 <TaskList

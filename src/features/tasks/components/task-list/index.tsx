@@ -57,15 +57,6 @@ export const TaskList: FC<TaskListProps> = ({
 
     return (
         <div className="space-y-4 py-4">
-            {isOwnedTab && (
-                <Button
-                    fullWidth={true}
-                    onClick={onCreate}
-                    className="w-full py-4 px-4 flex items-center justify-center space-x-2 text-gray-300 bg-accent-2 hover:bg-gradient-to-r hover:from-blue-500 hover:to-purple-600 hover:text-white rounded-lg shadow-md transition-all duration-300"
-                >
-                    <span>+ Add New Task</span>
-                </Button>
-            )}
             {tasks.map((task) => (
                 <TaskCard key={task.id} task={task} onClick={() => onTaskClick(task.id)} isOwnedTab={isOwnedTab} />
             ))}

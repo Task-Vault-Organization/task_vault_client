@@ -1,0 +1,18 @@
+import {TaskStatus} from "../../../shared/types/task-status.ts";
+import {GetTaskItem} from "./get-task-item.ts";
+import {GetTaskSubmissionUser} from "./get-task-submission-user.ts";
+
+export type GetAssignedTask = {
+    id: string,
+    title: string,
+    description: string,
+    ownerId: string,
+    createdAt: Date,
+    deadlineAt?: Date,
+    statusId: string,
+    status?: TaskStatus,
+    approved?: boolean,
+    noComments: number,
+    taskItems: GetTaskItem[],
+    assignees: GetTaskSubmissionUser[]
+}
