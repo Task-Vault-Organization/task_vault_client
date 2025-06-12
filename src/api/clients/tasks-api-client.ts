@@ -10,6 +10,7 @@ import { GetOwnedTasksResponse } from "../../features/tasks/types/get-owned-task
 import { GetAssignedTasksResponse } from "../../features/tasks/types/get-assigned-tasks-response.ts";
 import { GetOwnedTaskResponse } from "../../features/tasks/types/get-owned-task-response.ts";
 import { GetAssignedTaskResponse } from "../../features/tasks/types/get-assigned-task-response.ts";
+import {GetTaskSubmissionResponse} from "../../features/tasks/types/get-task-submission-response.ts";
 
 export const TasksApiClient = ((client: AxiosInstance, urlPath: string = '') => {
     const createTask = async (createTask: CreateTask): Promise<BaseApiResponse> => {
@@ -51,8 +52,8 @@ export const TasksApiClient = ((client: AxiosInstance, urlPath: string = '') => 
         return response.data;
     };
 
-    const getTaskSubmissionsForAssignee = async (taskId: string, assigneeId: string): Promise<BaseApiResponse> => {
-        const response: AxiosResponse<BaseApiResponse> = await client.get(`${urlPath}${taskId}/submissions/${assigneeId}`);
+    const getTaskSubmissionsForAssignee = async (taskId: string, assigneeId: string): Promise<GetTaskSubmissionResponse> => {
+        const response: AxiosResponse<GetTaskSubmissionResponse> = await client.get(`${urlPath}${taskId}/submissions/${assigneeId}`);
         return response.data;
     };
 

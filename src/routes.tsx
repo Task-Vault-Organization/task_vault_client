@@ -11,7 +11,8 @@ import {Login} from "./features/authentication/components/login";
 import {MyFilesPage} from "./features/file-storage/pages/my-files-page";
 import {TasksPage} from "./features/tasks/pages/tasks-page";
 import {CreateTaskPage} from "./features/tasks/pages/create-task-page";
-import {TaskPage} from "./features/tasks/pages/task-page";
+import {AssignedTaskPage} from "./features/tasks/pages/assigned-task-page";
+import {OwnedTaskPage} from "./features/tasks/pages/owned-tasks-page";
 
 export const router = createBrowserRouter([
     {
@@ -25,7 +26,8 @@ export const router = createBrowserRouter([
             { path: 'files/:folderId', element: (<ProtectedRoute><MyFilesPage /></ProtectedRoute>) },
             { path: 'tasks', element: (<ProtectedRoute><TasksPage /></ProtectedRoute>) },
             {path: 'task/new', element: (<ProtectedRoute><CreateTaskPage /></ProtectedRoute>) },
-            {path: 'task/:taskId', element: (<ProtectedRoute><TaskPage /></ProtectedRoute>) }
+            {path: 'task/assigned/:taskId', element: (<ProtectedRoute><AssignedTaskPage /></ProtectedRoute>) },
+            {path: 'task/owned/:taskId', element: (<ProtectedRoute><OwnedTaskPage /></ProtectedRoute>) }
         ],
     },
 ]);

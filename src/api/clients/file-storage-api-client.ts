@@ -16,6 +16,7 @@ import {CreateOrUpdateFileShareRequest} from "../../features/file-storage/types/
 import {ResolveFileShareRequest} from "../../features/file-storage/types/resolve-file-share-request.ts";
 import {GetFileShareDataResponse} from "../../features/file-storage/types/get-file-share-data-response.ts";
 import {GetFileResponse} from "../../features/file-storage/types/get-file-response.ts";
+import {GetFilesByTypeResponse} from "../../features/file-storage/types/get-files-by-type-response.ts";
 
 export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '') => {
     const getUploadedFiles = async (): Promise<GetUploadedFilesResponse> => {
@@ -107,6 +108,11 @@ export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '
         return response.data;
     };
 
+    const getFilesByType = async (fileTypeId: string): Promise<GetFilesByTypeResponse> => {
+        const response: AxiosResponse<GetFilesByTypeResponse> = await client.get(`${urlPath}files/by-type/${fileTypeId}`);
+        return response.data;
+    };
+
     const uploadFile = async (uploadFile: UploadFile): Promise<any> => {
         const formData = new FormData();
 
@@ -147,6 +153,7 @@ export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '
         createOrUpdateFileShareRequest,
         resolveFileShareRequest,
         getFileShareData,
-        getFile
+        getFile,
+        getFilesByType
     };
 })(BaseApiClient, 'file-storage/');

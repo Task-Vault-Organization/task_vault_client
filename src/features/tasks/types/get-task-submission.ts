@@ -6,5 +6,9 @@ export type GetTaskSubmission = {
     submittedById: string,
     submittedAt: string,
 
-    taskItemFiles: GetFile[]
+    taskItemFiles: GetTaskSubmissionFileDto[]
+}
+
+export type GetTaskSubmissionFileDto = GetFile & {
+    taskItemId: string
 }

@@ -2,6 +2,8 @@ import { FC } from "react";
 import { GetTask } from "../../types/get-task.ts";
 import {TaskCard} from "../task-card";
 import { Button } from "../../../../shared/components/reusable/buttons/button";
+import {FaPlus} from "react-icons/fa";
+import {useNavigate} from "react-router";
 
 interface TaskListProps {
     tasks: GetTask[];
@@ -22,6 +24,8 @@ export const TaskList: FC<TaskListProps> = ({
         onTaskClick,
         isOwnedTab
     }) => {
+
+    const navigate = useNavigate();
 
     if (isLoading) {
         return (
@@ -55,8 +59,16 @@ export const TaskList: FC<TaskListProps> = ({
         );
     }
 
+    const handleCreateTask = () => {
+        navigate("/task/new");
+    };
+
     return (
         <div className="space-y-4 py-4">
+            <Button onClick={handleCreateTask} className="w-full">
+                <FaPlus className="mr-2" />
+                Create Task
+            </Button>
             {tasks.map((task) => (
                 <TaskCard key={task.id} task={task} onClick={() => onTaskClick(task.id)} isOwnedTab={isOwnedTab} />
             ))}

@@ -86,7 +86,8 @@ export const TasksPage: FC = () => {
     };
 
     const handleTaskClick = (taskId: string) => {
-        navigate(`/task/${taskId}`);
+        const path = activeTab === "owned" ? `/task/owned/${taskId}` : `/task/assigned/${taskId}`;
+        navigate(path);
     };
 
     const handleCreateTask = () => {
@@ -120,10 +121,6 @@ export const TasksPage: FC = () => {
                                 Assigned
                             </button>
                         </div>
-                        <Button onClick={handleCreateTask} className="sm:ml-4">
-                            <FaPlus className="mr-2" />
-                            Create Task
-                        </Button>
                     </div>
 
                     <div className="flex items-center gap-2 flex-wrap">
