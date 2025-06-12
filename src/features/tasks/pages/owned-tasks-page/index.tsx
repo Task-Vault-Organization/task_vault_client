@@ -10,6 +10,7 @@ import { Button } from "../../../../shared/components/reusable/buttons/button";
 import { Spinner } from "../../../../shared/components/reusable/loading/spinner";
 import { FileViewerModal } from "../../../../shared/components/modals/file-viewer-modal";
 import { FaFileAlt } from "react-icons/fa";
+import { LlmApiClient } from "../../../../api/clients/llm-api-client";
 
 export const OwnedTaskPage: FC = () => {
     const { taskId } = useParams();
@@ -20,6 +21,8 @@ export const OwnedTaskPage: FC = () => {
     const [selectedSubmission, setSelectedSubmission] = useState<GetTaskSubmission | null>(null);
     const [subLoading, setSubLoading] = useState(false);
     const [filePreview, setFilePreview] = useState<{ open: boolean; file: any | null }>({ open: false, file: null });
+    const [checkResults, setCheckResults] = useState<Record<string, boolean>>({});
+    const [checking, setChecking] = useState(false);
 
     useEffect(() => {
         const fetchTask = async () => {
@@ -41,6 +44,14 @@ export const OwnedTaskPage: FC = () => {
         fetchTask();
     }, [taskId]);
 
+    useEffect(() => {
+        if (!selectedSubmission) return;
+        const storedResults = localStorage.getItem(`file-check-results-${selectedSubmission.id}`);
+        if (storedResults) {
+            setCheckResults(JSON.parse(storedResults));
+        }
+    }, [selectedSubmission]);
+
     const getStatusIcon = (status: boolean | null | undefined) => {
         if (status === true) return <BsCheckCircleFill className="text-green-400 w-4 h-4" />;
         if (status === false) return <FaTimesCircle className="text-red-400 w-4 h-4" />;
@@ -56,6 +67,31 @@ export const OwnedTaskPage: FC = () => {
         } finally {
             setSubLoading(false);
         }
+    };
+
+    const checkAllFiles = async () => {
+        if (!selectedSubmission) return;
+        setChecking(true);
+        const newResults: Record<string, boolean> = {};
+
+        for (const item of task?.taskItems || []) {
+            const file = selectedSubmission.taskItemFiles.find(f => f.taskItemId === item.id);
+            if (file && item.fileCategory?.id) {
+                try {
+                    const res = await LlmApiClient.checkFileCategory({
+                        fileId: file.id,
+                        fileCategoryId: item.fileCategory.id
+                    });
+                    newResults[file.id] = res.matchPercentage > 80;
+                } catch {
+                    newResults[file.id] = false;
+                }
+            }
+        }
+
+        setCheckResults(newResults);
+        localStorage.setItem(`file-check-results-${selectedSubmission.id}`, JSON.stringify(newResults));
+        setChecking(false);
     };
 
     if (loading) return <div className="text-white text-center mt-10">Loading...</div>;
@@ -117,13 +153,19 @@ export const OwnedTaskPage: FC = () => {
 
             {selectedSubmission && !subLoading && (
                 <div className="space-y-8">
-                    <h3 className="text-xl font-semibold text-white border-b border-accent-2 pb-2">
-                        {selectedUser?.email}'s submission
-                    </h3>
+                    <div className="flex justify-between items-center">
+                        <h3 className="text-xl font-semibold text-white border-b border-accent-2 pb-2">
+                            {selectedUser?.email}'s submission
+                        </h3>
+                        <Button className="bg-blue-600 hover:bg-blue-700" onClick={checkAllFiles} disabled={checking}>
+                            {checking ? "Checking..." : "Check File Categories"}
+                        </Button>
+                    </div>
 
                     {task.taskItems.map(item => {
                         const file = selectedSubmission.taskItemFiles.find(f => f.taskItemId === item.id);
                         const fileExt = file?.name?.split(".").pop() || "";
+                        const checkStatus = file ? checkResults[file.id] : null;
 
                         return (
                             <div key={item.id} className="bg-accent-1 border border-accent-2 p-6 rounded-2xl space-y-6 shadow">
@@ -139,6 +181,11 @@ export const OwnedTaskPage: FC = () => {
                                         {item.fileCategory && (
                                             <span className="px-2 py-1 rounded bg-green-900 border border-green-600 text-green-300">
                                                 Category: {item.fileCategory.name}
+                                            </span>
+                                        )}
+                                        {file && checkStatus != null && (
+                                            <span className={`px-2 py-1 rounded border ${checkStatus ? "bg-green-800 border-green-600 text-green-300" : "bg-red-800 border-red-600 text-red-300"}`}>
+                                                Match: {checkStatus ? "✔ Success" : "✖ Failed"}
                                             </span>
                                         )}
                                     </div>
@@ -165,11 +212,6 @@ export const OwnedTaskPage: FC = () => {
                             </div>
                         );
                     })}
-
-                    <div className="flex gap-4 pt-4">
-                        <Button className="bg-green-600 hover:bg-green-700 w-full">Approve</Button>
-                        <Button className="bg-red-600 hover:bg-red-700 w-full">Deny</Button>
-                    </div>
                 </div>
             )}
 
