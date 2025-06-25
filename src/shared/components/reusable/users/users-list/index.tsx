@@ -1,5 +1,6 @@
 import { FC } from "react";
 import { GetUser } from "../../../../types/get-user.ts";
+import {UserAvatar} from "../user-avatar";
 
 interface UsersListProps {
     users: GetUser[];
@@ -27,11 +28,7 @@ export const UsersList: FC<UsersListProps> = ({ users, onRemoveUser, userRemovab
         <div className="flex flex-wrap gap-2">
             {users.map((user) => (
                 <div key={user.id} className="relative group">
-                    <div
-                        className={`flex items-center justify-center w-8 h-8 rounded-full ${getColorFromEmail(user.email)} text-sm font-medium`}
-                    >
-                        {user.email.charAt(0).toUpperCase()}
-                    </div>
+                    <UserAvatar user={user} size={32} />
 
                     <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block bg-gray-800 text-white text-xs px-2 py-1 rounded shadow">
                         {user.email}

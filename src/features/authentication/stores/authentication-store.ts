@@ -1,7 +1,7 @@
 import { create, StoreApi } from "zustand";
-import {AuthenticationState} from "../types/authentication-state.ts";
-import {GetUser} from "../../../shared/types/get-user.ts";
-import {persist} from "zustand/middleware";
+import { AuthenticationState } from "../types/authentication-state.ts";
+import { GetUser } from "../../../shared/types/get-user.ts";
+import { persist } from "zustand/middleware";
 
 export const useAuthenticationStore: StoreApi<AuthenticationState> = create<AuthenticationState>(
     persist(
@@ -16,6 +16,10 @@ export const useAuthenticationStore: StoreApi<AuthenticationState> = create<Auth
                 loading: false,
                 jwtToken: jwtToken
             })),
+            setUser: (user: GetUser) => set((state) => ({
+                ...state,
+                user
+            })),
             setLoading: () => set((state: AuthenticationState) => ({
                 ...state,
                 loading: true
@@ -26,7 +30,8 @@ export const useAuthenticationStore: StoreApi<AuthenticationState> = create<Auth
                 loading: false,
                 jwtToken: ''
             }))
-        }), {
+        }),
+        {
             name: 'authentication-storage'
         }
     )
