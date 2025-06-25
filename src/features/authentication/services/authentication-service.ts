@@ -9,11 +9,18 @@ import { showAlert } from "../../../shared/helpers/alerts-helpers.ts";
 import { setJwtToken } from "../../../shared/helpers/jwt-helpers.ts";
 import { localStorageLogout } from "../../../shared/helpers/local-storage-helpers.ts";
 import { useAuthenticationStore } from "../stores/authentication-store.ts";
+import {CreateUserResponse} from "../types/create-user-response.ts";
 
 export const AuthenticationService = (() => {
     const handleAuthenticationSuccess = async (
-        res: BaseApiResponse & AuthenticateUserResponse
+        res: BaseApiResponse & AuthenticateUserResponse,
+        navigate
     ) => {
+        if (!res.isEmailConfirmed) {
+            showAlert("info", "Email not confirmed");
+            navigate(`/email-confirm/${res.userId}`);
+        }
+
         if (res.jwtToken) {
             setJwtToken(res.jwtToken);
         }
@@ -27,9 +34,9 @@ export const AuthenticationService = (() => {
         showAlert("success", res.message);
     };
 
-    const authenticateUser = async (authenticateUser: AuthenticateUser) => {
+    const authenticateUser = async (authenticateUser: AuthenticateUser, navigate) => {
         const res = await AuthenticateApiClient.authenticateUser(authenticateUser);
-        await handleAuthenticationSuccess(res);
+        await handleAuthenticationSuccess(res, navigate);
     };
 
     const authenticateUserGoogle = async (authenticateUser: AuthenticateUserGoogle) => {
@@ -37,10 +44,11 @@ export const AuthenticationService = (() => {
         await handleAuthenticationSuccess(res);
     };
 
-    const createUser = async (createUser: CreateUser) => {
-        const res: BaseApiResponse = await AuthenticateApiClient.createUser(createUser);
+    const createUser = async (createUser: CreateUser, navigate) => {
+        const res: CreateUserResponse = await AuthenticateApiClient.createUser(createUser);
         if (res.message) {
             showAlert("success", res.message);
+            navigate(`/email-confirm/${res.userId}`)
         }
     };
 

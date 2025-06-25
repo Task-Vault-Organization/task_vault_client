@@ -13,6 +13,7 @@ import {TasksPage} from "./features/tasks/pages/tasks-page";
 import {CreateTaskPage} from "./features/tasks/pages/create-task-page";
 import {AssignedTaskPage} from "./features/tasks/pages/assigned-task-page";
 import {OwnedTaskPage} from "./features/tasks/pages/owned-tasks-page";
+import {EmailConfirmationPage} from "./features/authentication/pages/email-confirmation";
 
 export const router = createBrowserRouter([
     {
@@ -27,7 +28,8 @@ export const router = createBrowserRouter([
             { path: 'tasks', element: (<ProtectedRoute><TasksPage /></ProtectedRoute>) },
             {path: 'task/new', element: (<ProtectedRoute><CreateTaskPage /></ProtectedRoute>) },
             {path: 'task/assigned/:taskId', element: (<ProtectedRoute><AssignedTaskPage /></ProtectedRoute>) },
-            {path: 'task/owned/:taskId', element: (<ProtectedRoute><OwnedTaskPage /></ProtectedRoute>) }
+            {path: 'task/owned/:taskId', element: (<ProtectedRoute><OwnedTaskPage /></ProtectedRoute>) },
+            {path: 'email-confirm/:userId', element: (<UnprotectedRoute><EmailConfirmationPage /></UnprotectedRoute>) }
         ],
     },
 ]);

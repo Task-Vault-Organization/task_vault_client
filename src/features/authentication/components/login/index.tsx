@@ -2,7 +2,7 @@ import { FC, useState } from "react";
 import { SubmitHandler } from "react-hook-form";
 import { AuthenticateUser } from "../../types/authenticate-user.ts";
 import { AuthenticationService } from "../../services/authentication-service.ts";
-import { Link } from "react-router";
+import {Link, useNavigate} from "react-router";
 import { FaSignInAlt, FaEnvelope, FaLock } from "react-icons/fa";
 import { TitleWithIcon } from "../../../../shared/components/reusable/title-with-icon";
 import { Form } from "../../../../shared/components/forms/form";
@@ -51,6 +51,8 @@ const fieldConfigs = [
 export const Login: FC = () => {
     const [loading, setLoading] = useState(false);
 
+    const navigate = useNavigate();
+
     const onSubmit: SubmitHandler<LoginInput> = async (data) => {
         const authenticateUser: AuthenticateUser = {
             email: data.email,
@@ -58,7 +60,7 @@ export const Login: FC = () => {
         };
         setLoading(true);
         try {
-            await AuthenticationService.authenticateUser(authenticateUser);
+            await AuthenticationService.authenticateUser(authenticateUser, navigate);
         } catch (error) {
         } finally {
             setLoading(false);

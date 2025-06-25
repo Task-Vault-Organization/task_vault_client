@@ -8,10 +8,14 @@ import {AuthenticateUser} from "../../features/authentication/types/authenticate
 import {AuthenticateUserResponse} from "../../features/authentication/types/authenticate-user-response.ts";
 import {GetUserResponse} from "../../shared/types/get-user-response.ts";
 import {AuthenticateUserGoogle} from "../../features/authentication/types/authenticate-user-google.ts";
+import {
+    CheckIfUserHasEmailConfirmationRequestsResponse
+} from "../../features/authentication/types/check-if-user-has-email-confirmation-requests-response.ts";
+import {CreateUserResponse} from "../../features/authentication/types/create-user-response.ts";
 
 export const AuthenticateApiClient = ((client: AxiosInstance, urlPath: string = '') => {
-    const createUser = async (createUser: CreateUser): Promise<BaseApiResponse> => {
-        const response: AxiosResponse<BaseApiResponse> =
+    const createUser = async (createUser: CreateUser): Promise<CreateUserResponse> => {
+        const response: AxiosResponse<CreateUserResponse> =
             await client.post(`${urlPath}create-user`, createUser);
             return response.data;
     };
@@ -34,6 +38,24 @@ export const AuthenticateApiClient = ((client: AxiosInstance, urlPath: string = 
         return response.data;
     };
 
+    const checkEmailConfirmationRequests = async (userId: string): Promise<CheckIfUserHasEmailConfirmationRequestsResponse> => {
+        const response: AxiosResponse<CheckIfUserHasEmailConfirmationRequestsResponse> =
+            await client.get(`${urlPath}email-confirmation-request/${userId}`);
+        return response.data;
+    };
+
+    const createEmailConfirmationRequest = async (userId: string): Promise<BaseApiResponse> => {
+        const response: AxiosResponse<BaseApiResponse> =
+            await client.post(`${urlPath}email-confirmation-request/${userId}`);
+        return response.data;
+    };
+
+    const verifyEmailConfirmationCode = async (userId: string, code: string): Promise<BaseApiResponse> => {
+        const response: AxiosResponse<BaseApiResponse> =
+            await client.post(`${urlPath}verify-email-confirmation/${userId}/${code}`);
+        return response.data;
+    };
+
     return {
         ...BaseApiClient(client, urlPath),
         ...ReadApiClient(client, urlPath),
@@ -41,6 +63,9 @@ export const AuthenticateApiClient = ((client: AxiosInstance, urlPath: string = 
         createUser,
         authenticateUser,
         getUser,
-        authenticateUserGoogle
+        authenticateUserGoogle,
+        checkEmailConfirmationRequests,
+        createEmailConfirmationRequest,
+        verifyEmailConfirmationCode
     };
 })(BaseApiClient, 'authenticate/');

@@ -66,8 +66,7 @@ export const SignUp: FC = () => {
     const onSubmit = async (data: IFormInput) => {
         setLoading(true);
         try {
-            await AuthenticationService.createUser(data);
-            navigate("/login");
+            await AuthenticationService.createUser(data, navigate);
         } catch (e) {
         } finally {
             setLoading(false);

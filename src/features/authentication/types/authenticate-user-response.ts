@@ -1,5 +1,7 @@
-import {baseApiResponse} from "../../../shared/types/base-api-response.ts";
+import {BaseApiResponse} from "../../../shared/types/base-api-response.ts";
 
-export type AuthenticateUserResponse = baseApiResponse & {
-    jwtToken: string
+export type AuthenticateUserResponse = BaseApiResponse & {
+    jwtToken?: string,
+    isEmailConfirmed: boolean,
+    userId: string
 }
