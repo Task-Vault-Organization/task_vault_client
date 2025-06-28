@@ -1,4 +1,4 @@
 export type CreateOrUpdateFileShareRequest = {
-    toUsers: string[],
+    toUsersEmails: string[],
     fileId: string
 }

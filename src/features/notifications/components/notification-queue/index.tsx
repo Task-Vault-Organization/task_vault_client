@@ -1,28 +1,32 @@
-import { FC, useEffect } from "react";
+import { FC, useEffect, useState } from "react";
 import { useNotificationStore } from "../../stores/notifications-store.ts";
 import { NotificationCard } from "../notification-card.tsx";
 import { AnimatePresence, motion } from "framer-motion";
 
 export const NotificationQueue: FC = () => {
-    const { current, shiftQueue } = useNotificationStore();
+    const { current, shiftQueue, refetchNotifications, setCurrent } = useNotificationStore();
+    const [visible, setVisible] = useState(false);
 
     useEffect(() => {
-        if (current) {
-            const timeout = setTimeout(() => {
+        if (!current) return;
+
+        setVisible(true);
+
+        const timeout = setTimeout(() => {
+            setVisible(false);
+            setTimeout(() => {
                 shiftQueue();
-            }, 5000);
-            return () => clearTimeout(timeout);
-        }
-    }, [current]);
+                refetchNotifications();
+            }, 300);
+        }, 5000);
 
-    useEffect(() => {
-        shiftQueue();
-    }, []);
+        return () => clearTimeout(timeout);
+    }, [current]);
 
     return (
         <div className="fixed bottom-5 right-5 flex flex-col-reverse items-start gap-2 z-50 pointer-events-none">
             <AnimatePresence>
-                {current && (
+                {visible && current && (
                     <motion.div
                         key={current.id}
                         layout
@@ -31,6 +35,11 @@ export const NotificationQueue: FC = () => {
                         animate={{ opacity: 1, x: 0 }}
                         exit={{ opacity: 0, x: 50 }}
                         transition={{ duration: 0.3, ease: "easeInOut" }}
+                        onAnimationComplete={(definition) => {
+                            if (definition === "exit") {
+                                setCurrent(null);
+                            }
+                        }}
                     >
                         <NotificationCard notification={current} />
                     </motion.div>

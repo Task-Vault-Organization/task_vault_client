@@ -11,6 +11,7 @@ import { GetAssignedTasksResponse } from "../../features/tasks/types/get-assigne
 import { GetOwnedTaskResponse } from "../../features/tasks/types/get-owned-task-response.ts";
 import { GetAssignedTaskResponse } from "../../features/tasks/types/get-assigned-task-response.ts";
 import {GetTaskSubmissionResponse} from "../../features/tasks/types/get-task-submission-response.ts";
+import {ResolveTaskSubmission} from "../../features/tasks/types/resolve-task-submission.ts";
 
 export const TasksApiClient = ((client: AxiosInstance, urlPath: string = '') => {
     const createTask = async (createTask: CreateTask): Promise<BaseApiResponse> => {
@@ -62,6 +63,11 @@ export const TasksApiClient = ((client: AxiosInstance, urlPath: string = '') => 
         return response.data;
     };
 
+    const resolveTaskSubmission = async (resolveTaskSubmission: ResolveTaskSubmission): Promise<BaseApiResponse> => {
+        const response: AxiosResponse<CreateTaskSubmission> = await client.post(`${urlPath}resolve-submission`, resolveTaskSubmission);
+        return response.data;
+    };
+
     return {
         ...BaseApiClient(client, urlPath),
         ...ReadApiClient(client, urlPath),
@@ -74,6 +80,7 @@ export const TasksApiClient = ((client: AxiosInstance, urlPath: string = '') => 
         getAssignedTask,
         getTaskSubmissions,
         getTaskSubmissionsForAssignee,
-        createTaskSubmission
+        createTaskSubmission,
+        resolveTaskSubmission
     };
 })(BaseApiClient, 'tasks/');

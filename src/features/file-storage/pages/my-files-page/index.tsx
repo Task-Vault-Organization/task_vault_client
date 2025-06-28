@@ -1,6 +1,4 @@
-import { FC, useEffect, useState } from "react";
-import { FileStorageApiClient } from "../../../../api/clients/file-storage-api-client.ts";
-import { GetFile } from "../../types/get-file.ts";
+import { FC, useEffect } from "react";
 import { FileListComponent } from "../../components/file-list";
 import { ToolbarToggle } from "../../../../shared/components/reusable/files/toolbar-toggle";
 import { FileUpload } from "../../components/file-upload";
@@ -14,9 +12,8 @@ import { useDirectoriesStore } from "../../../../shared/stores/directories-store
 import { useParams } from "react-router";
 import { useAuthenticationStore } from "../../../authentication/stores/authentication-store.ts";
 import { AuthenticationState } from "../../../authentication/types/authentication-state.ts";
-
-const VIEW_TYPE_KEY = "fileViewType";
-const DISPLAY_MODE_KEY = "fileDisplayMode";
+import {useFilesStore} from "../../stores/files-store.ts";
+import {AiTool} from "../../components/ai-tool";
 
 const VIEW_OPTIONS = [
     { key: "all", label: "All", icon: <FaLayerGroup className="mr-1" /> },
@@ -31,39 +28,24 @@ const DISPLAY_OPTIONS = [
 ];
 
 export const MyFilesPage: FC = () => {
-    const [files, setFiles] = useState<GetFile[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [viewType, setViewType] = useState<string>(localStorage.getItem(VIEW_TYPE_KEY) || "all");
-    const [displayMode, setDisplayMode] = useState<string>(localStorage.getItem(DISPLAY_MODE_KEY) || "1");
+    const {
+        files,
+        loading,
+        viewType,
+        displayMode,
+        fetchFiles,
+        setFiles,
+        setLoading,
+        setViewType,
+        setDisplayMode,
+    } = useFilesStore();
 
     const { folderId } = useParams();
     const { goTo } = useDirectoriesStore();
     const user = useAuthenticationStore((state: AuthenticationState) => state.user);
 
-    const fetchFiles = async () => {
-        try {
-            setLoading(true);
-            const directoryId = folderId !== "root" ? folderId : user.rootDirectoryId;
-            let data;
-
-            if (viewType === "uploaded") {
-                data = await FileStorageApiClient.getAllDirectoryUploadedFiles(directoryId);
-            } else if (viewType === "shared") {
-                data = await FileStorageApiClient.getAllDirectorySharedFiles(directoryId);
-            } else {
-                data = await FileStorageApiClient.getAllDirectoryFiles(directoryId);
-            }
-
-            setFiles(data.files);
-        } catch (error) {
-            console.error("Error fetching files:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
-        fetchFiles();
+        fetchFiles(folderId);
         const isRoot = folderId === "root";
         const rootDirectory = { id: "root", name: "root" };
         if (isRoot) {
@@ -74,23 +56,16 @@ export const MyFilesPage: FC = () => {
     }, [folderId, viewType]);
 
     const handleCreateFolder = async () => {
-        await fetchFiles();
+        await fetchFiles(folderId);
     };
 
     const handleUpload = async () => {
         setViewType("uploaded");
-        localStorage.setItem(VIEW_TYPE_KEY, "uploaded");
-        await fetchFiles();
+        await fetchFiles(folderId);
     };
 
-    const handleViewChange = (type: string) => {
-        setViewType(type);
-        localStorage.setItem(VIEW_TYPE_KEY, type);
-    };
-
-    const handleDisplayChange = (mode: string) => {
-        setDisplayMode(mode);
-        localStorage.setItem(DISPLAY_MODE_KEY, mode);
+    const handleSubmitAiTool = async (folderId: string, categories: string[]) => {
+        await fetchFiles(folderId);
     };
 
     return (
@@ -103,7 +78,7 @@ export const MyFilesPage: FC = () => {
                         {VIEW_OPTIONS.map(({ key, label, icon }) => (
                             <button
                                 key={key}
-                                onClick={() => handleViewChange(key)}
+                                onClick={() => setViewType(key)}
                                 className={`px-4 font-medium py-2 text-sm flex items-center rounded-lg transition-all duration-300 ${
                                     viewType === key ? "bg-accent-2 text-white" : "hover:bg-gray-700"
                                 }`}
@@ -117,7 +92,7 @@ export const MyFilesPage: FC = () => {
                         {DISPLAY_OPTIONS.map(({ key, icon }) => (
                             <button
                                 key={key}
-                                onClick={() => handleDisplayChange(key)}
+                                onClick={() => setDisplayMode(key)}
                                 className={`p-2 rounded-lg transition-all duration-300 ${
                                     displayMode === key ? "bg-accent-2 text-white" : "hover:bg-gray-700"
                                 }`}
@@ -143,13 +118,7 @@ export const MyFilesPage: FC = () => {
                 <>
                     <Breadcrumbs />
                     <div className="flex flex-col items-center space-y-4 w-full">
-                        <FileListComponent
-                            files={files}
-                            setFiles={setFiles}
-                            setLoading={setLoading}
-                            fetchFiles={fetchFiles}
-                            displayMode={displayMode}
-                        />
+                        <FileListComponent displayMode={displayMode} />
                     </div>
                 </>
             )}
@@ -158,6 +127,7 @@ export const MyFilesPage: FC = () => {
                 setLoading={setLoading}
                 uploadContent={<FileUpload onUpload={handleUpload} setLoading={setLoading} />}
                 createFolderContent={<FolderCreate onCreate={handleCreateFolder} />}
+                aiToolContent={<AiTool  onSubmit={handleSubmitAiTool}/>}
             />
         </div>
     );

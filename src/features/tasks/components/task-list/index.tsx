@@ -44,21 +44,6 @@ export const TaskList: FC<TaskListProps> = ({
         );
     }
 
-    if (tasks.length === 0) {
-        return (
-            <div className="flex flex-col items-center space-y-4 py-8">
-                <p className="text-lg font-medium text-gray-400">
-                    {isOwnedTab
-                        ? "You have no owned tasks yet"
-                        : "No assigned tasks found. Check back later! ⏳"}
-                </p>
-                <Button onClick={isOwnedTab ? onCreate : onRetry}>
-                    {isOwnedTab ? "Create a Task" : "Refresh"}
-                </Button>
-            </div>
-        );
-    }
-
     const handleCreateTask = () => {
         navigate("/task/new");
     };

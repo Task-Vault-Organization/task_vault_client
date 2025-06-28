@@ -12,17 +12,19 @@ import {
     useNotificationStore
 } from "../../../../features/notifications/stores/notifications-store.ts";
 import { FileStorageApiClient } from "../../../../api/clients/file-storage-api-client.ts";
-import {UploadProfilePhotoModal} from "../../../components/modals/upload-profile-photo-modal";
+import { UploadProfilePhotoModal } from "../../../components/modals/upload-profile-photo-modal";
+import { CustomFileCategoryModal } from "../../../components/modals/custom-file-category-modal";
+import { FiUpload, FiLogOut, FiUser, FiFolderPlus } from "react-icons/fi";
 
 export function NavigationMenu() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
+    const [customCategoriesModalOpen, setCustomCategoriesModalOpen] = useState(false);
     const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
 
     const isAuthenticated = useAuthenticationStore((state: AuthenticationState) => state.isAuthenticated);
     const user = useAuthenticationStore(state => state.user);
-    const logoutStore = useAuthenticationStore(state => state.logoutStore);
 
     const unreadCount = useNotificationStore((state: NotificationState) =>
         state.notifications.filter(n => n.notificationStatusId === 1).length
@@ -30,6 +32,16 @@ export function NavigationMenu() {
 
     const { authenticatedMenuItemList, unauthenticatedMenuItemList } = menuItemsConfig;
     const menuItemsList = isAuthenticated ? authenticatedMenuItemList : unauthenticatedMenuItemList;
+
+    function formatFileSize(bytes: number): string {
+        if (bytes >= 1024 * 1024 * 1024) return (bytes / (1024 * 1024 * 1024)).toFixed(1) + ' GB';
+        if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        if (bytes >= 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return bytes + ' B';
+    }
+    const maxBytes = 200 * 1024 * 1024; // 200 MB
+    const usageBytes = user?.totalFileSize || 0;
+    const usageRatio = Math.min(usageBytes / maxBytes, 1);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -40,13 +52,15 @@ export function NavigationMenu() {
     }, []);
 
     useEffect(() => {
+        let objectUrl: string | null = null;
+
         async function loadProfileImage() {
             if (user?.profilePhotoId) {
                 try {
                     const response = await FileStorageApiClient.downloadFile(user.profilePhotoId);
                     const blob = new Blob([response]);
-                    const url = URL.createObjectURL(blob);
-                    setProfileImageUrl(url);
+                    objectUrl = URL.createObjectURL(blob);
+                    setProfileImageUrl(objectUrl);
                 } catch {
                     setProfileImageUrl(null);
                 }
@@ -60,8 +74,8 @@ export function NavigationMenu() {
         loadProfileImage();
 
         return () => {
-            if (profileImageUrl) {
-                URL.revokeObjectURL(profileImageUrl);
+            if (objectUrl) {
+                URL.revokeObjectURL(objectUrl);
             }
         };
     }, [user?.profilePhotoId, user?.googleProfilePhotoUrl]);
@@ -107,7 +121,7 @@ export function NavigationMenu() {
     const renderUserSection = () => (
         <>
             <UploadProfilePhotoModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
-
+            <CustomFileCategoryModal isOpen={customCategoriesModalOpen} onClose={() => setCustomCategoriesModalOpen(false)} />
             <div className="mr-3 absolute right-10 pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0 cursor-pointer">
                 <Dropdown
                     buttonContent={
@@ -128,17 +142,55 @@ export function NavigationMenu() {
                     <NotificationRenderer />
                 </Dropdown>
             </div>
-
             <Dropdown buttonContent={renderProfile()}>
-                <div className="py-2 px-3 bg-accent-2 rounded-lg">
-                    <div className="px-4 py-2 text-sm text-text-primary">{user?.email}</div>
+                <div className="py-2 w-72 px-3 bg-gray-900 border border-gray-700 text-gray-300 rounded-lg shadow-lg">
+                    <div className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-300 break-all">
+                        <FiUser className="text-lg" />
+                        <span>{user?.email}</span>
+                    </div>
+                    <div className="my-2 border-t border-gray-200 opacity-30" />
                     <button
                         onClick={() => setModalOpen(true)}
-                        className="block w-full text-left px-4 py-2 text-sm text-text-primary"
+                        className="flex items-center gap-2 w-full text-left px-4 py-2 cursor-pointer text-sm rounded-md font-medium"
                     >
+                        <FiUpload className="text-gray-300" />
                         Upload Profile Photo
                     </button>
-                    <a onClick={AuthenticationService.logoutUser} className="cursor-pointer block px-4 py-2 text-sm text-text-primary">Sign Out</a>
+                    <button
+                        onClick={() => setCustomCategoriesModalOpen(true)}
+                        className="flex items-center gap-2 w-full text-left px-4 py-2 cursor-pointer text-sm rounded-md font-medium"
+                    >
+                        <FiFolderPlus className="text-gray-300" />
+                        File Categories
+                    </button>
+                    <button
+                        onClick={AuthenticationService.logoutUser}
+                        className="flex items-center gap-2 w-full text-left px-4 py-2 text-sm cursor-pointer rounded-md font-medium"
+                    >
+                        <FiLogOut className="text-gray-300" />
+                        Sign Out
+                    </button>
+                    {user && (
+                        <div className="px-4 py-2 text-sm text-gray-300">
+                            <div className="mb-1 flex justify-between items-center text-xs">
+                                <span>Storage</span>
+                                <span>
+                                    {formatFileSize(usageBytes)} / 200 MB
+                                </span>
+                            </div>
+                            <div className="w-full h-2 rounded bg-gray-700 overflow-hidden">
+                                <div
+                                    className={`h-full transition-all duration-300 ${
+                                        usageRatio < 0.6 ? 'bg-green-500' :
+                                            usageRatio < 0.85 ? 'bg-yellow-500' :
+                                                'bg-red-500'
+                                    }`}
+                                    style={{ width: `${usageRatio * 100}%` }}
+                                />
+                            </div>
+                        </div>
+
+                    )}
                 </div>
             </Dropdown>
         </>

@@ -1,24 +1,15 @@
 import { FC } from "react";
+import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
 import { FileItem } from "../file-item";
-import { GetFile } from "../../types/get-file.ts";
-import {DragDropContext, Draggable, Droppable} from "@hello-pangea/dnd";
 import {FileStorageApiClient} from "../../../../api/clients/file-storage-api-client.ts";
+import {useFilesStore} from "../../stores/files-store.ts";
 
 interface FileListProps {
-    files: GetFile[];
-    setFiles: (files: GetFile[]) => void;
-    setLoading?: (loading: boolean) => void;
-    fetchFiles?: () => Promise<void>;
-    displayMode?: string;
+    displayMode: string;
 }
 
-export const FileListComponent: FC<FileListProps> = ({
-                                                         files,
-                                                         setFiles,
-                                                         setLoading,
-                                                         fetchFiles,
-                                                         displayMode = "1"
-                                                     }) => {
+export const FileListComponent: FC<FileListProps> = ({ displayMode = "1" }) => {
+    const { files, setFiles } = useFilesStore();
     const isDraggable = displayMode === "1";
 
     const gridCols =
@@ -31,13 +22,7 @@ export const FileListComponent: FC<FileListProps> = ({
             <div className={`grid ${gridCols} gap-4 w-full`}>
                 {files.map((file) => (
                     <div key={file.id}>
-                        <FileItem
-                            file={file}
-                            setLoading={setLoading}
-                            fetchFiles={fetchFiles}
-                            files={files}
-                            setFiles={setFiles}
-                        />
+                        <FileItem file={file} />
                     </div>
                 ))}
             </div>
@@ -74,13 +59,7 @@ export const FileListComponent: FC<FileListProps> = ({
                                         {...provided.draggableProps}
                                         {...provided.dragHandleProps}
                                     >
-                                        <FileItem
-                                            file={file}
-                                            setLoading={setLoading}
-                                            fetchFiles={fetchFiles}
-                                            files={files}
-                                            setFiles={setFiles}
-                                        />
+                                        <FileItem file={file} />
                                     </div>
                                 )}
                             </Draggable>

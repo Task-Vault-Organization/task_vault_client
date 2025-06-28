@@ -5,5 +5,5 @@ export type CreateTask = {
     description: string;
     deadlineAt?: Date | null;
     taskItems: CreateTaskItem[];
-    assigneesIds?: string[] | null;
+    assigneesEmails?: string[] | null;
 };

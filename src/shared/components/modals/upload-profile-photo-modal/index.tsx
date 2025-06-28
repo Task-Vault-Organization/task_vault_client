@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { UploadCloud } from "lucide-react";
 import { useAuthenticationStore } from "../../../../features/authentication/stores/authentication-store.ts";
 import { UsersApiClient } from "../../../../api/clients/user-api-client.ts";
 import { AuthenticateApiClient } from "../../../../api/clients/authenticate-api-client.ts";
@@ -6,7 +7,7 @@ import { FileStorageApiClient } from "../../../../api/clients/file-storage-api-c
 import { showAlert } from "../../../helpers/alerts-helpers.ts";
 import { BaseModal } from "../base-modal";
 import { Button } from "../../reusable/buttons/button";
-import {GetUserResponse} from "../../../types/get-user-response.ts";
+import { GetUserResponse } from "../../../types/get-user-response.ts";
 
 interface UploadProfilePhotoModalProps {
     isOpen: boolean;
@@ -17,6 +18,7 @@ export function UploadProfilePhotoModal({ isOpen, onClose }: UploadProfilePhotoM
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
+    const [isDragOver, setIsDragOver] = useState(false);
     const user = useAuthenticationStore(state => state.user);
     const jwtToken = useAuthenticationStore(state => state.jwtToken);
     const authenticateUserStore = useAuthenticationStore(state => state.authenticateUserStore);
@@ -69,6 +71,24 @@ export function UploadProfilePhotoModal({ isOpen, onClose }: UploadProfilePhotoM
         setSelectedFile(file);
     };
 
+    const handleDrop = (event: React.DragEvent<HTMLLabelElement>) => {
+        event.preventDefault();
+        setIsDragOver(false);
+        const file = event.dataTransfer.files[0];
+        if (file && file.type.startsWith("image/")) {
+            setSelectedFile(file);
+        }
+    };
+
+    const handleDragOver = (event: React.DragEvent<HTMLLabelElement>) => {
+        event.preventDefault();
+        setIsDragOver(true);
+    };
+
+    const handleDragLeave = () => {
+        setIsDragOver(false);
+    };
+
     const handleUpload = async () => {
         if (!selectedFile) return;
         setUploading(true);
@@ -90,40 +110,53 @@ export function UploadProfilePhotoModal({ isOpen, onClose }: UploadProfilePhotoM
     };
 
     return (
-        <BaseModal isOpen={isOpen} onClose={onClose} title="Upload Profile Photo">
-            <div className="flex flex-col gap-4 items-center">
-                {previewUrl ? (
-                    <img
-                        src={previewUrl}
-                        className="rounded-full w-24 h-24 object-cover"
-                        alt="Profile"
-                    />
-                ) : (
-                    <div className="rounded-full w-24 h-24 bg-gray-700 text-white flex items-center justify-center text-xl uppercase">
-                        {user?.email?.[0] ?? ""}
-                    </div>
-                )}
+        <BaseModal isOpen={isOpen} onClose={onClose} title="Upload Profile Photo" contentClassName="bg-accent-1 text-white">
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    handleUpload();
+                }}
+                className="p-6 rounded-2xl space-y-6 w-full mx-auto"
+            >
                 <input
-                    type="file"
                     ref={fileInputRef}
-                    className="hidden"
-                    accept="image/*"
+                    type="file"
                     onChange={handleFileChange}
+                    className="hidden"
+                    id="profile-photo-upload"
+                    accept="image/*"
                 />
-                <Button onClick={() => fileInputRef.current?.click()}>
-                    Choose Photo
-                </Button>
-                {selectedFile && (
-                    <div className="text-sm text-gray-300 text-center">{selectedFile.name}</div>
-                )}
-                <Button
-                    disabled={!selectedFile || uploading}
-                    onClick={handleUpload}
-                    loading={uploading}
+
+                <label
+                    htmlFor="profile-photo-upload"
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`cursor-pointer flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-xl w-full text-center transition-all duration-200
+                        ${isDragOver ? "border-blue-400 bg-blue-900/20 scale-105" : "border-gray-600"}
+                    `}
                 >
-                    Upload
-                </Button>
-            </div>
+                    {previewUrl ? (
+                        <img src={previewUrl} alt="Preview" className="rounded-full w-40 h-40 object-cover" />
+                    ) : (
+                        <div className="rounded-full w-40 h-40 bg-gray-700 text-white flex items-center justify-center text-4xl uppercase">
+                            {user?.email?.[0] ?? ""}
+                        </div>
+                    )}
+                    <UploadCloud className="w-8 h-8 text-gray-300 mt-4" />
+                    <span className="mt-2 text-gray-300">Click or drag an image file here to upload</span>
+                </label>
+
+                {selectedFile && (
+                    <div className="text-sm text-gray-300 text-center truncate">{selectedFile.name}</div>
+                )}
+
+                <div className="flex justify-end">
+                    <Button type="submit" disabled={!selectedFile || uploading} loading={uploading}>
+                        Upload
+                    </Button>
+                </div>
+            </form>
         </BaseModal>
     );
 }

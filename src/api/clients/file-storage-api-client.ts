@@ -17,54 +17,47 @@ import {ResolveFileShareRequest} from "../../features/file-storage/types/resolve
 import {GetFileShareDataResponse} from "../../features/file-storage/types/get-file-share-data-response.ts";
 import {GetFileResponse} from "../../features/file-storage/types/get-file-response.ts";
 import {GetFilesByTypeResponse} from "../../features/file-storage/types/get-files-by-type-response.ts";
+import {CreateCustomFileCategory} from "../../features/file-storage/types/create-custom-file-category.ts";
+import {GetAllCustomFileCategoriesResponse} from "../../features/file-storage/types/get-all-custom-file-categories-response.ts";
 
 export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '') => {
     const getUploadedFiles = async (): Promise<GetUploadedFilesResponse> => {
-        const response: AxiosResponse<GetUploadedFilesResponse> =
-            await client.get(`${urlPath}uploaded`);
+        const response: AxiosResponse<GetUploadedFilesResponse> = await client.get(`${urlPath}uploaded`);
         return response.data;
     };
 
     const getAllDirectoryFiles = async (directoryId: string): Promise<GetUploadedFilesResponse> => {
-        const response: AxiosResponse<GetUploadedFilesResponse> =
-            await client.get(`${urlPath}directory/${directoryId}/files/all`);
+        const response: AxiosResponse<GetUploadedFilesResponse> = await client.get(`${urlPath}directory/${directoryId}/files/all`);
         return response.data;
     };
 
     const getAllDirectoryUploadedFiles = async (directoryId: string): Promise<GetUploadedFilesResponse> => {
-        const response: AxiosResponse<GetUploadedFilesResponse> =
-            await client.get(`${urlPath}directory/${directoryId}/files/uploaded`);
+        const response: AxiosResponse<GetUploadedFilesResponse> = await client.get(`${urlPath}directory/${directoryId}/files/uploaded`);
         return response.data;
     };
 
     const getAllDirectorySharedFiles = async (directoryId: string): Promise<GetUploadedFilesResponse> => {
-        const response: AxiosResponse<GetUploadedFilesResponse> =
-            await client.get(`${urlPath}directory/${directoryId}/files/shared`);
+        const response: AxiosResponse<GetUploadedFilesResponse> = await client.get(`${urlPath}directory/${directoryId}/files/shared`);
         return response.data;
     };
 
     const getFileTypes = async (): Promise<GetFileTypeResponse> => {
-        const response: AxiosResponse<GetFileTypeResponse> =
-            await client.get(`${urlPath}file-types`);
+        const response: AxiosResponse<GetFileTypeResponse> = await client.get(`${urlPath}file-types`);
         return response.data;
     };
 
     const getFileCategories = async (): Promise<GetFileCategoriesResponse> => {
-        const response: AxiosResponse<GetFileCategoriesResponse> =
-            await client.get(`${urlPath}file-categories`);
+        const response: AxiosResponse<GetFileCategoriesResponse> = await client.get(`${urlPath}file-categories`);
         return response.data;
     };
 
     const getFileHistory = async (fileId: string): Promise<GetFileHistoryResponse> => {
-        const response: AxiosResponse<GetFileHistoryResponse> =
-            await client.get(`${urlPath}${fileId}/history`);
+        const response: AxiosResponse<GetFileHistoryResponse> = await client.get(`${urlPath}${fileId}/history`);
         return response.data;
     };
 
     const downloadFile = async (fileId: string): Promise<Blob> => {
-        const response: AxiosResponse<Blob> = await client.get(`${urlPath}download/${fileId}`, {
-            responseType: 'blob',
-        });
+        const response: AxiosResponse<Blob> = await client.get(`${urlPath}download/${fileId}`, { responseType: 'blob' });
         return response.data;
     };
 
@@ -93,13 +86,13 @@ export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '
         return response.data;
     };
 
-    const createOrUpdateFileShareRequest = async (createOrUpdateFileShareRequest: CreateOrUpdateFileShareRequest): Promise<BaseApiResponse> => {
-        const response: AxiosResponse<BaseApiResponse> = await client.post(`${urlPath}file-share-requests`, createOrUpdateFileShareRequest);
+    const createOrUpdateFileShareRequest = async (dto: CreateOrUpdateFileShareRequest): Promise<BaseApiResponse> => {
+        const response: AxiosResponse<BaseApiResponse> = await client.post(`${urlPath}file-share-requests`, dto);
         return response.data;
     };
 
-    const resolveFileShareRequest = async (resolveFileShareRequest: ResolveFileShareRequest): Promise<BaseApiResponse> => {
-        const response: AxiosResponse<BaseApiResponse> = await client.patch(`${urlPath}file-share-requests/resolve`, resolveFileShareRequest);
+    const resolveFileShareRequest = async (dto: ResolveFileShareRequest): Promise<BaseApiResponse> => {
+        const response: AxiosResponse<BaseApiResponse> = await client.patch(`${urlPath}file-share-requests/resolve`, dto);
         return response.data;
     };
 
@@ -115,21 +108,40 @@ export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '
 
     const uploadFile = async (uploadFile: UploadFile): Promise<any> => {
         const formData = new FormData();
-
         uploadFile.files.forEach((file) => {
             formData.append("files", file);
         });
-
         if (uploadFile.directoryId) {
             formData.append("DirectoryId", uploadFile.directoryId);
         }
-
-
         const response: AxiosResponse<any> = await client.post(`${urlPath}upload`, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
+            headers: { 'Content-Type': 'multipart/form-data' }
         });
+        return response.data;
+    };
+
+    const getAllUserFiles = async (): Promise<GetUploadedFilesResponse> => {
+        const response: AxiosResponse<GetUploadedFilesResponse> = await client.get(`${urlPath}files/all`);
+        return response.data;
+    };
+
+    const getSharedFiles = async (): Promise<GetUploadedFilesResponse> => {
+        const response: AxiosResponse<GetUploadedFilesResponse> = await client.get(`${urlPath}files/shared`);
+        return response.data;
+    };
+
+    const createCustomFileCategory = async (dto: CreateCustomFileCategory): Promise<BaseApiResponse> => {
+        const response: AxiosResponse<BaseApiResponse> = await client.post(`${urlPath}file-categories/custom`, dto);
+        return response.data;
+    };
+
+    const deleteCustomFileCategory = async (categoryId: string): Promise<BaseApiResponse> => {
+        const response: AxiosResponse<BaseApiResponse> = await client.delete(`${urlPath}file-categories/custom/${categoryId}`);
+        return response.data;
+    };
+
+    const getAllCustomFileCategories = async (): Promise<GetAllCustomFileCategoriesResponse> => {
+        const response: AxiosResponse<GetAllCustomFileCategoriesResponse> = await client.get(`${urlPath}file-categories/custom`);
         return response.data;
     };
 
@@ -138,22 +150,27 @@ export const FileStorageApiClient = ((client: AxiosInstance, urlPath: string = '
         ...ReadApiClient(client, urlPath),
         ...CrudApiClient(client, urlPath),
         getUploadedFiles,
-        downloadFile,
-        uploadFile,
-        getFileTypes,
-        getFileCategories,
-        createDirectory,
         getAllDirectoryFiles,
-        updateFileIndex,
-        deleteFile,
-        renameFile,
-        getFileHistory,
         getAllDirectoryUploadedFiles,
         getAllDirectorySharedFiles,
+        getFileTypes,
+        getFileCategories,
+        getFileHistory,
+        downloadFile,
+        createDirectory,
+        deleteFile,
+        renameFile,
+        getFile,
+        updateFileIndex,
         createOrUpdateFileShareRequest,
         resolveFileShareRequest,
         getFileShareData,
-        getFile,
-        getFilesByType
+        getFilesByType,
+        uploadFile,
+        getAllUserFiles,
+        getSharedFiles,
+        createCustomFileCategory,
+        deleteCustomFileCategory,
+        getAllCustomFileCategories
     };
 })(BaseApiClient, 'file-storage/');

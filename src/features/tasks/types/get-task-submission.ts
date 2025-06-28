@@ -5,6 +5,7 @@ export type GetTaskSubmission = {
     taskId: string,
     submittedById: string,
     submittedAt: string,
+    dissaproveComment?: string
 
     taskItemFiles: GetTaskSubmissionFileDto[]
 }

@@ -7,17 +7,15 @@ import { motion } from "framer-motion";
 import { CreateTaskItem } from "../../types/create-task-item";
 import { TasksApiClient } from "../../../../api/clients/tasks-api-client";
 import { BaseApiResponse } from "../../../../shared/types/base-api-response";
-import { GetUser } from "../../../../shared/types/get-user";
-import { UserSearchField } from "../../../../shared/components/reusable/search/search-users";
-import { UsersList } from "../../../../shared/components/reusable/users/users-list";
 import { CustomBgButton } from "../../../../shared/components/reusable/buttons/custom-bg-button";
 import { Form } from "../../../../shared/components/forms/form";
 import { FormFieldConfig } from "../../../../shared/components/forms/form";
 import { FormField } from "../../../../shared/components/forms/form-field";
 import { TextAreaField } from "../../../../shared/components/forms/text-area-field";
-import {FileStorageApiClient} from "../../../../api/clients/file-storage-api-client.ts";
-import {AsyncSelectField} from "../../../../shared/components/forms/async-select-field";
-import {showAlert} from "../../../../shared/helpers/alerts-helpers.ts";
+import { FileStorageApiClient } from "../../../../api/clients/file-storage-api-client.ts";
+import { AsyncSelectField } from "../../../../shared/components/forms/async-select-field";
+import { showAlert } from "../../../../shared/helpers/alerts-helpers.ts";
+import { FiPlus, FiTrash2 } from "react-icons/fi";
 
 interface TaskFormData {
     title: string;
@@ -28,7 +26,7 @@ export const CreateTaskPage: FC = () => {
     const navigate = useNavigate();
     const [deadline, setDeadline] = useState<Date | null>(null);
     const [taskItems, setTaskItems] = useState<CreateTaskItem[]>([]);
-    const [selectedUsers, setSelectedUsers] = useState<GetUser[]>([]);
+    const [emailInputs, setEmailInputs] = useState<string[]>([""]);
     const [loading, setLoading] = useState<boolean>(false);
 
     const addTaskItem = () => {
@@ -59,14 +57,18 @@ export const CreateTaskPage: FC = () => {
         });
     };
 
-    const handleUserSelect = (user: GetUser) => {
-        if (!selectedUsers.some((u) => u.id === user.id)) {
-            setSelectedUsers((prev) => [...prev, user]);
-        }
+    const handleEmailChange = (index: number, value: string) => {
+        const updated = [...emailInputs];
+        updated[index] = value;
+        setEmailInputs(updated);
     };
 
-    const handleRemoveUser = (userId: string) => {
-        setSelectedUsers((prev) => prev.filter((u) => u.id !== userId));
+    const handleAddEmailInput = () => {
+        setEmailInputs([...emailInputs, ""]);
+    };
+
+    const handleRemoveEmailInput = (index: number) => {
+        setEmailInputs(emailInputs.filter((_, i) => i !== index));
     };
 
     const fields: FormFieldConfig[] = [
@@ -101,23 +103,27 @@ export const CreateTaskPage: FC = () => {
     const handleFormSubmit = async (data: TaskFormData) => {
         try {
             setLoading(true);
+            const cleanedEmails = emailInputs
+                .map((email) => email.trim().toLowerCase())
+                .filter((email) => email);
+
             const taskToSubmit = {
                 title: data.title,
                 description: data.description,
                 deadlineAt: deadline,
                 taskItems,
-                assigneesIds: selectedUsers.map((u) => u.id),
+                assigneesEmails: cleanedEmails.length > 0 ? cleanedEmails : null,
             };
 
             const response: BaseApiResponse = await TasksApiClient.createTask(taskToSubmit);
             if (response) {
                 navigate("/tasks");
-                showAlert("success", "Successfully added task")
+                showAlert("success", "Successfully added task");
             }
         } catch (err) {
             console.error(err);
         } finally {
-             setLoading(false);
+            setLoading(false);
         }
     };
 
@@ -161,14 +167,42 @@ export const CreateTaskPage: FC = () => {
 
                 <div className="space-y-2">
                     <label className="block text-sm font-medium text-white mb-1">Assignees</label>
-                    <UserSearchField
-                        onUserSelect={handleUserSelect}
-                        selectedUsers={selectedUsers}
-                        onUserDeselect={handleRemoveUser}
-                    />
-                    <div className="my-5">
-                        <UsersList users={selectedUsers} onRemoveUser={handleRemoveUser} userRemovable />
-                    </div>
+                    {emailInputs.map((email, idx) => {
+                        const normalized = email.trim().toLowerCase();
+                        const isDuplicate = normalized && emailInputs.filter(
+                            (e) => e.trim().toLowerCase() === normalized
+                        ).length > 1;
+                        return (
+                            <div key={idx} className="flex gap-2 items-center w-full">
+                                <div className="flex-grow">
+                                    <FormField
+                                        value={email}
+                                        setValue={(val) => handleEmailChange(idx, val)}
+                                        placeholderText={"Assignee email"}
+                                        type="email"
+                                        required
+                                        error={isDuplicate ? { message: "Duplicate email" } : undefined}
+                                     />
+                                </div>
+                                {emailInputs.length > 1 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveEmailInput(idx)}
+                                        className="text-red-400 hover:text-red-300"
+                                    >
+                                        <FiTrash2 className="w-5 h-5" />
+                                    </button>
+                                )}
+                            </div>
+                        );
+                    })}
+                    <button
+                        type="button"
+                        onClick={handleAddEmailInput}
+                        className="text-sm text-white hover:text-blue-300 flex items-center gap-1"
+                    >
+                        <FiPlus /> Add another email
+                    </button>
                 </div>
 
                 <div className="space-y-4">

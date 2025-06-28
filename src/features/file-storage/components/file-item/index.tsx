@@ -17,32 +17,34 @@ import { FileSharingModal } from "../../../../shared/components/modals/file-shar
 import { UsersList } from "../../../../shared/components/reusable/users/users-list";
 import { useAuthenticationStore } from "../../../authentication/stores/authentication-store.ts";
 import { AuthenticationState } from "../../../authentication/types/authentication-state.ts";
+import {useFilesStore} from "../../stores/files-store.ts";
 
 interface FileItemProps {
     file: GetFile;
-    setLoading?: (loading: boolean) => void;
-    fetchFiles?: () => Promise<void>;
-    files: GetFile[];
-    setFiles: (files: GetFile[]) => void;
 }
 
-export const FileItem: FC<FileItemProps> = ({ file, setLoading, fetchFiles, files, setFiles }) => {
+export const FileItem: FC<FileItemProps> = ({ file }) => {
     const [open, setOpen] = useState(false);
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [historyOpen, setHistoryOpen] = useState(false);
     const [fileSharingModalOpen, setFileSharingModalOpen] = useState(false);
     const [fileSharingFileId, setFileSharingFileId] = useState<string>("");
+
+    const inputRef = useRef<HTMLInputElement>(null);
+    const spanRef = useRef<HTMLSpanElement>(null);
+
     const isDirectory = file.isDirectory;
     const fileExtension = isDirectory ? "" : getFileExtension(file.name);
     const baseName = isDirectory ? file.name : file.name.replace(/\.[^/.]+$/, "");
     const [editedName, setEditedName] = useState(baseName);
-    const inputRef = useRef<HTMLInputElement>(null);
-    const spanRef = useRef<HTMLSpanElement>(null);
+
     const { show } = useContextMenu({ id: `file-menu-${file.id}` });
     const navigate = useNavigate();
     const { push } = useDirectoriesStore();
     const user = useAuthenticationStore((state: AuthenticationState) => state.user);
+
+    const { files, setFiles, setLoading, fetchFiles } = useFilesStore();
 
     useEffect(() => {
         if (isEditing && inputRef.current) {
@@ -90,7 +92,7 @@ export const FileItem: FC<FileItemProps> = ({ file, setLoading, fetchFiles, file
     const handleDownload = async () => {
         try {
             const response = await FileStorageApiClient.downloadFile(file.id);
-            let blob = response instanceof Blob ? response : new Blob([response], { type: file.fileType?.extension });
+            const blob = response instanceof Blob ? response : new Blob([response], { type: file.fileType?.extension });
             const url = URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = url;
@@ -106,9 +108,9 @@ export const FileItem: FC<FileItemProps> = ({ file, setLoading, fetchFiles, file
 
     const deleteFile = async () => {
         try {
-            if (setLoading) setLoading(true);
+            setLoading(true);
             await FileStorageApiClient.deleteFile(file.id);
-            if (fetchFiles) await fetchFiles();
+            await fetchFiles();
             showAlert("success", "Successfully deleted item");
         } catch (err) {
             console.error("Delete failed", err);
@@ -130,8 +132,8 @@ export const FileItem: FC<FileItemProps> = ({ file, setLoading, fetchFiles, file
             try {
                 const res = await FileStorageApiClient.renameFile({ fileId: file.id, name: finalName });
                 showAlert("success", res.message);
-                const newFiles = files.map((f) => f.id === file.id ? { ...f, name: res.renamedFile?.name || finalName } : f);
-                setFiles(newFiles);
+                const updatedFiles = files.map(f => f.id === file.id ? { ...f, name: res.renamedFile?.name || finalName } : f);
+                setFiles(updatedFiles);
             } catch (err) {
                 console.error("Rename failed", err);
             }
@@ -195,8 +197,8 @@ export const FileItem: FC<FileItemProps> = ({ file, setLoading, fetchFiles, file
                                 style={{ minWidth: "1ch" }}
                             />
                             <span ref={spanRef} className="absolute invisible whitespace-pre font-medium px-1 py-0.5">
-                {editedName || " "}
-              </span>
+                                {editedName || " "}
+                            </span>
                         </div>
                     ) : (
                         <p className="font-medium truncate flex items-center justify-center sm:justify-start gap-3">
@@ -232,8 +234,8 @@ export const FileItem: FC<FileItemProps> = ({ file, setLoading, fetchFiles, file
                 <Item id="delete" onClick={handleItemClick}>
                     <FiTrash2 className="inline mr-2" style={{ color: "#fff", fontSize: ".9em" }} />
                     <span style={{ color: "#fff", fontSize: ".9em" }}>
-            {file.uploaderId === user.id ? "Delete" : "Remove shared file"}
-          </span>
+                        {file.uploaderId === user.id ? "Delete" : "Remove shared file"}
+                    </span>
                 </Item>
                 <Item id="download" onClick={handleItemClick}>
                     <FiDownload className="inline mr-2" style={{ color: "#fff", fontSize: ".9em" }} />

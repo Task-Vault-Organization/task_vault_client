@@ -16,12 +16,6 @@ import {
 import { Button } from "../../../../shared/components/reusable/buttons/button";
 import { SelectField } from "../../../../shared/components/forms/select-field";
 
-const statusOptions = [
-    { id: 0, name: "All" },
-    { id: 1, name: "Started" },
-    { id: 2, name: "Completed" }
-];
-
 const sortOptions = [
     { id: 0, name: "Newest", icon: <FaSortAmountDown className="inline mr-1" /> },
     { id: 1, name: "Oldest", icon: <FaSortAmountUp className="inline mr-1" /> }
@@ -38,10 +32,6 @@ export const TasksPage: FC = () => {
         Number(localStorage.getItem("sortByIndex")) || 0
     );
 
-    const [filterBy, setFilterBy] = useState<number>(
-        Number(localStorage.getItem("filterBy")) || 0
-    );
-
     const [ownedTasks, setOwnedTasks] = useState<GetTask[]>([]);
     const [assignedTasks, setAssignedTasks] = useState<GetTask[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -53,7 +43,7 @@ export const TasksPage: FC = () => {
             setError(null);
             try {
                 const sortValue = sortByIndex === 0 ? "newest" : "oldest";
-                const statusFilter = statusOptions[filterBy].name.toLowerCase();
+                const statusFilter = "all";
                 if (activeTab === "owned") {
                     const res = await TasksApiClient.getOwnedTasks(sortValue, statusFilter);
                     setOwnedTasks(res.tasks || []);
@@ -68,7 +58,7 @@ export const TasksPage: FC = () => {
             }
         };
         fetchTasks();
-    }, [activeTab, sortByIndex, filterBy]);
+    }, [activeTab, sortByIndex]);
 
     const handleTabChange = (tab: "owned" | "assigned") => {
         setActiveTab(tab);
@@ -78,11 +68,6 @@ export const TasksPage: FC = () => {
     const handleSortChange = (index: number) => {
         setSortByIndex(index);
         localStorage.setItem("sortByIndex", index.toString());
-    };
-
-    const handleFilterChange = (val: number) => {
-        setFilterBy(val);
-        localStorage.setItem("filterBy", val.toString());
     };
 
     const handleTaskClick = (taskId: string) => {
@@ -98,52 +83,42 @@ export const TasksPage: FC = () => {
         <div className="mx-auto space-y-6 mb-10 max-w-5xl px-4 sm:px-6">
             <h2 className="text-2xl font-semibold text-center text-white">My Tasks</h2>
 
-            <div className="border-b border-gray-800 py-2">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-wrap">
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => handleTabChange("owned")}
-                                className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center transition ${
-                                    activeTab === "owned" ? "bg-accent-2 text-white" : "hover:bg-gray-700 text-gray-300"
-                                }`}
-                            >
-                                <FaUserEdit className="mr-2" />
-                                Owned
-                            </button>
-                            <button
-                                onClick={() => handleTabChange("assigned")}
-                                className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center transition ${
-                                    activeTab === "assigned" ? "bg-accent-2 text-white" : "hover:bg-gray-700 text-gray-300"
-                                }`}
-                            >
-                                <FaUserCheck className="mr-2" />
-                                Assigned
-                            </button>
-                        </div>
-                    </div>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 border-b border-gray-800 py-2">
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => handleTabChange("owned")}
+                        className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center transition ${
+                            activeTab === "owned" ? "bg-accent-2 text-white" : "hover:bg-gray-700 text-gray-300"
+                        }`}
+                    >
+                        <FaUserEdit className="mr-2" />
+                        Owned
+                    </button>
+                    <button
+                        onClick={() => handleTabChange("assigned")}
+                        className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center transition ${
+                            activeTab === "assigned" ? "bg-accent-2 text-white" : "hover:bg-gray-700 text-gray-300"
+                        }`}
+                    >
+                        <FaUserCheck className="mr-2" />
+                        Assigned
+                    </button>
+                    <Button onClick={handleCreateTask}>
+                        <FaPlus className="mr-2" />
+                        Create Task
+                    </Button>
+                </div>
 
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <div className="w-36">
-                            <SelectField
-                                labelText=""
-                                options={sortOptions.map((opt, i) => ({
-                                    id: i,
-                                    name: `${opt.icon ? opt.icon.props.className ? '' : '' : ''} ${opt.name}`,
-                                }))}
-                                value={sortByIndex}
-                                setValue={handleSortChange}
-                            />
-                        </div>
-                        <div className="w-36 ml-1">
-                            <SelectField
-                                labelText=""
-                                options={statusOptions}
-                                value={filterBy}
-                                setValue={handleFilterChange}
-                            />
-                        </div>
-                    </div>
+                <div className="w-36">
+                    <SelectField
+                        labelText=""
+                        options={sortOptions.map((opt, i) => ({
+                            id: i,
+                            name: `${opt.name}`,
+                        }))}
+                        value={sortByIndex}
+                        setValue={handleSortChange}
+                    />
                 </div>
             </div>
 

@@ -3,5 +3,6 @@ export type GetUser = {
     email: string,
     rootDirectoryId?: string,
     profilePhotoId?: string,
-    googleProfilePhotoUrl?: string
+    googleProfilePhotoUrl?: string,
+    totalFileSize: number
 }

@@ -7,6 +7,8 @@ import { UploadFile } from "../../types/upload-file.ts";
 import { useParams } from "react-router";
 import { useAuthenticationStore } from "../../../authentication/stores/authentication-store.ts";
 import { AuthenticationState } from "../../../authentication/types/authentication-state.ts";
+import {GetUserResponse} from "../../../../shared/types/get-user-response.ts";
+import {AuthenticateApiClient} from "../../../../api/clients/authenticate-api-client.ts";
 
 interface FileUploadProps {
     setLoading?: (loading: boolean) => void;
@@ -67,6 +69,11 @@ export function FileUpload({ onSuccess, onError, onUpload }: FileUploadProps) {
             showAlert("success", "Files uploaded successfully!");
             setFiles([]);
             if (fileInputRef.current) fileInputRef.current.value = "";
+            const resUser: GetUserResponse = await AuthenticateApiClient.getUser();
+            if (resUser.user) {
+                const { setUser } = useAuthenticationStore.getState();
+                setUser(resUser.user);
+            }
             onUpload?.();
         } catch (error) {
             onError?.(error);

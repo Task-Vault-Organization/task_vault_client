@@ -4,7 +4,8 @@ import { FieldError } from "react-hook-form";
 interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
     value: string;
     setValue: (val: string) => void;
-    labelText: ReactNode | string;
+    labelText?: ReactNode | string;
+    placeholderText?: string;
     required?: boolean;
     error?: FieldError;
     icon?: React.ComponentType<{ className?: string }>;
@@ -14,6 +15,7 @@ export const FormField: FC<FormFieldProps> = ({
                                                   value,
                                                   setValue,
                                                   labelText,
+                                                  placeholderText,
                                                   error,
                                                   required,
                                                   icon: Icon,
@@ -30,10 +32,12 @@ export const FormField: FC<FormFieldProps> = ({
 
     return (
         <div className="mb-4">
-            <label className="block mb-1 text-sm font-medium text-gray-300">
-                {labelText}
-                {required && <span className="text-red-400 ml-1">*</span>}
-            </label>
+            {labelText && (
+                <label className="block mb-1 text-sm font-medium text-gray-300">
+                    {labelText}
+                    {required && <span className="text-red-400 ml-1">*</span>}
+                </label>
+            )}
             <div className="relative">
                 {Icon && (
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
@@ -45,7 +49,7 @@ export const FormField: FC<FormFieldProps> = ({
                     value={value}
                     onChange={(e) => setValue(e.target.value)}
                     className={inputClasses}
-                    placeholder={typeof labelText === "string" ? labelText : undefined}
+                    placeholder={placeholderText || ""}
                 />
             </div>
             {error && (

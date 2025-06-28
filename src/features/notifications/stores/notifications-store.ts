@@ -1,13 +1,17 @@
-import { create } from "zustand";
+import { NotificationsApiClient } from "../../../api/clients/notification-api-client.ts";
 import { GetNotification } from "../types/get-notification.ts";
+import { create } from "zustand";
 
 export interface NotificationState {
     notifications: GetNotification[],
     queue: GetNotification[],
     current: GetNotification | null,
+    setCurrent: (notification: GetNotification | null) => void,
     addNotification: (notification: GetNotification) => void,
     setInitialNotifications: (initialNotifications: GetNotification[]) => void,
-    shiftQueue: () => void
+    shiftQueue: () => void,
+    markAsSeenInStore: (id: string) => void,
+    refetchNotifications: () => Promise<void>
 }
 
 export const useNotificationStore = create<NotificationState>((set, get) => ({
@@ -38,6 +42,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
             }
         }
     },
+    setCurrent: (notification) => set({ current: notification }),
     shiftQueue: () => {
         const state = get();
         const [next, ...rest] = state.queue;
@@ -45,5 +50,21 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
             current: next || null,
             queue: rest
         });
+    },
+    markAsSeenInStore: (id: string) => {
+        set(state => ({
+            notifications: state.notifications.map(n =>
+                n.id === id ? { ...n, notificationStatusId: 2 } : n
+            ),
+            current: state.current?.id === id ? { ...state.current, notificationStatusId: 2 } : state.current
+        }));
+    },
+    refetchNotifications: async () => {
+        try {
+            const response = await NotificationsApiClient.getAllUserNotifications();
+            set({ notifications: response.notifications });
+        } catch (error) {
+            console.error("Failed to refetch notifications", error);
+        }
     }
 }));

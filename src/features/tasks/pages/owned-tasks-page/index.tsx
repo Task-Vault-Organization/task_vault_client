@@ -2,15 +2,18 @@ import { FC, useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { TasksApiClient } from "../../../../api/clients/tasks-api-client";
 import { GetOwnedTaskResponse } from "../../types/get-owned-task-response";
-import { FaCalendarAlt, FaQuestionCircle, FaTimesCircle } from "react-icons/fa";
+import { FaCalendarAlt, FaQuestionCircle, FaTimesCircle, FaFileAlt } from "react-icons/fa";
 import { BsCheckCircleFill } from "react-icons/bs";
 import { GetTaskSubmission } from "../../types/get-task-submission";
 import { FileIcon, defaultStyles } from "react-file-icon";
-import { Button } from "../../../../shared/components/reusable/buttons/button";
-import { Spinner } from "../../../../shared/components/reusable/loading/spinner";
 import { FileViewerModal } from "../../../../shared/components/modals/file-viewer-modal";
-import { FaFileAlt } from "react-icons/fa";
+import { Spinner } from "../../../../shared/components/reusable/loading/spinner";
+import { FiDownload } from "react-icons/fi";
+import { FileStorageApiClient } from "../../../../api/clients/file-storage-api-client";
 import { LlmApiClient } from "../../../../api/clients/llm-api-client";
+import { TextAreaField } from "../../../../shared/components/forms/text-area-field";
+import { toast } from "react-toastify";
+import { showAlert } from "../../../../shared/helpers/alerts-helpers.ts";
 
 export const OwnedTaskPage: FC = () => {
     const { taskId } = useParams();
@@ -21,8 +24,10 @@ export const OwnedTaskPage: FC = () => {
     const [selectedSubmission, setSelectedSubmission] = useState<GetTaskSubmission | null>(null);
     const [subLoading, setSubLoading] = useState(false);
     const [filePreview, setFilePreview] = useState<{ open: boolean; file: any | null }>({ open: false, file: null });
-    const [checkResults, setCheckResults] = useState<Record<string, boolean>>({});
+    const [fileStatuses, setFileStatuses] = useState<Record<string, number | null | undefined>>({});
     const [checking, setChecking] = useState(false);
+    const [showDenyComment, setShowDenyComment] = useState(false);
+    const [denyComment, setDenyComment] = useState("");
 
     useEffect(() => {
         const fetchTask = async () => {
@@ -45,21 +50,23 @@ export const OwnedTaskPage: FC = () => {
     }, [taskId]);
 
     useEffect(() => {
-        if (!selectedSubmission) return;
-        const storedResults = localStorage.getItem(`file-check-results-${selectedSubmission.id}`);
-        if (storedResults) {
-            setCheckResults(JSON.parse(storedResults));
+        if (taskId && selectedUserId) {
+            const saved = localStorage.getItem(`fileStatuses-${taskId}-${selectedUserId}`);
+            if (saved) setFileStatuses(JSON.parse(saved));
+            else setFileStatuses({});
         }
-    }, [selectedSubmission]);
+    }, [taskId, selectedUserId]);
 
-    const getStatusIcon = (status: boolean | null | undefined) => {
-        if (status === true) return <BsCheckCircleFill className="text-green-400 w-4 h-4" />;
-        if (status === false) return <FaTimesCircle className="text-red-400 w-4 h-4" />;
-        return <FaQuestionCircle className="text-yellow-400 w-4 h-4" />;
-    };
+    useEffect(() => {
+        if (taskId && selectedUserId) {
+            localStorage.setItem(`fileStatuses-${taskId}-${selectedUserId}`, JSON.stringify(fileStatuses));
+        }
+    }, [fileStatuses, taskId, selectedUserId]);
 
     const fetchSubmission = async (assigneeId: string) => {
         setSubLoading(true);
+        setShowDenyComment(false);
+        setDenyComment("");
         try {
             const res = await TasksApiClient.getTaskSubmissionsForAssignee(taskId as string, assigneeId);
             setSelectedSubmission(res.submissions[0]);
@@ -69,71 +76,124 @@ export const OwnedTaskPage: FC = () => {
         }
     };
 
-    const checkAllFiles = async () => {
-        if (!selectedSubmission) return;
-        setChecking(true);
-        const newResults: Record<string, boolean> = {};
-
-        for (const item of task?.taskItems || []) {
-            const file = selectedSubmission.taskItemFiles.find(f => f.taskItemId === item.id);
-            if (file && item.fileCategory?.id) {
-                try {
-                    const res = await LlmApiClient.checkFileCategory({
-                        fileId: file.id,
-                        fileCategoryId: item.fileCategory.id
-                    });
-                    newResults[file.id] = res.matchPercentage > 80;
-                } catch {
-                    newResults[file.id] = false;
-                }
-            }
+    const handleDownload = async (fileId: string, fileName: string) => {
+        try {
+            const response = await FileStorageApiClient.downloadFile(fileId);
+            const blob = response instanceof Blob ? response : new Blob([response]);
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", fileName);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error("Download failed", err);
         }
-
-        setCheckResults(newResults);
-        localStorage.setItem(`file-check-results-${selectedSubmission.id}`, JSON.stringify(newResults));
-        setChecking(false);
     };
 
-    if (loading) return <div className="text-white text-center mt-10">Loading...</div>;
-    if (error || !task) return <div className="text-red-500 text-center mt-10">{error}</div>;
+    const handleCheckFiles = async () => {
+        if (!selectedSubmission || !task) return;
+        setChecking(true);
+        const updates: Record<string, number | null | undefined> = {};
+        try {
+            for (const file of selectedSubmission.taskItemFiles) {
+                const taskItem = task.taskItems.find(item => item.id === file.taskItemId);
+                const fileCategoryId = taskItem?.fileCategory?.id;
+                if (!fileCategoryId) {
+                    updates[file.id] = undefined;
+                    continue;
+                }
+                const res = await LlmApiClient.checkFileCategory({ fileId: file.id, fileCategoryId: fileCategoryId });
+                updates[file.id] = typeof res.matchPercentage === 'number' ? res.matchPercentage : undefined;
+            }
+            setFileStatuses(prev => ({ ...prev, ...updates }));
+            showAlert("success", "Files checked with AI.");
+        } catch {
+            showAlert("error", "AI check failed.");
+        } finally {
+            setChecking(false);
+        }
+    };
 
-    const approved = task.assignees.filter(a => a.approved === true).length;
-    const denied = task.assignees.filter(a => a.approved === false).length;
-    const pending = task.assignees.filter(a => a.approved == null).length;
+    const handleApprove = async () => {
+        if (!selectedSubmission || !selectedUserId) return;
+        try {
+            await TasksApiClient.resolveTaskSubmission({
+                submissionId: selectedSubmission.id,
+                isApproved: true
+            });
+            showAlert("success", "Submission approved.");
+            const refreshed = await TasksApiClient.getOwnedTask(taskId as string);
+            setTask(refreshed.task);
+            await fetchSubmission(selectedUserId);
+        } catch {
+            showAlert("error", "Failed to approve submission.");
+        }
+    };
+
+    const handleDisapprove = async () => {
+        if (!selectedSubmission || !selectedUserId || denyComment.trim() === "") {
+            showAlert("error", "Please enter a comment to disapprove.");
+            return;
+        }
+        try {
+            await TasksApiClient.resolveTaskSubmission({
+                submissionId: selectedSubmission.id,
+                isApproved: false,
+                dissaproveComment: denyComment.trim()
+            });
+            showAlert("success", "Submission disapproved.");
+            const refreshed = await TasksApiClient.getOwnedTask(taskId as string);
+            setTask(refreshed.task);
+            await fetchSubmission(selectedUserId);
+        } catch {
+            showAlert("error", "Failed to disapprove submission.");
+        }
+    };
+
+    if (loading) return <div className="text-center mt-10 text-gray-300">Loading...</div>;
+    if (error || !task) return <div className="text-center mt-10 text-red-400">{error}</div>;
 
     const selectedUser = task.assignees.find(a => a.id === selectedUserId);
 
     return (
-        <div className="max-w-5xl mx-auto px-4 py-8 text-white space-y-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-accent-1 p-6 rounded-2xl shadow border border-accent-2 space-y-6 md:space-y-0 md:space-x-6">
-                <div className="flex-1 space-y-3">
-                    <h1 className="text-2xl font-bold">{task.title}</h1>
-                    <p className="text-gray-300">{task.description || "No description provided."}</p>
-                    <p className="text-sm text-gray-400">{approved} approved, {denied} denied, {pending} pending</p>
-                </div>
+        <div className="max-w-5xl mx-auto px-4 py-8 text-gray-100 space-y-8">
+            <div className="bg-gray-800 border border-gray-700 rounded-lg p-6 shadow relative">
                 {task.deadlineAt && (
-                    <div className="bg-purple-900/30 border border-purple-600 px-4 py-2 rounded-xl">
-                        <div className="text-sm font-semibold text-purple-200 flex items-center gap-1">
-                            <FaCalendarAlt /> Due Date
-                        </div>
-                        <div className="text-lg text-white">{new Date(task.deadlineAt).toLocaleString()}</div>
+                    <div className="absolute top-4 right-4 px-3 py-1 bg-indigo-700 text-white text-sm rounded-full">
+                        {new Date(task.deadlineAt).toLocaleDateString()} • {(() => {
+                        const dueDate = new Date(task.deadlineAt);
+                        const now = new Date();
+                        const diffTime = dueDate.getTime() - now.getTime();
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        return diffDays > 0 ? `Due in ${diffDays} day${diffDays > 1 ? 's' : ''}` : "Due today";
+                    })()}
                     </div>
                 )}
+                <h1 className="text-2xl font-bold text-white mb-1">{task.title}</h1>
+                <p className="text-sm text-gray-400 mb-1">Owned by <span className="text-white font-medium">{task.owner.email}</span></p>
+                <p className="text-gray-300 mb-2">{task.description || "No description provided."}</p>
             </div>
 
-            <div className="flex flex-wrap gap-2 pb-2">
+            <div className="flex flex-wrap gap-2">
                 {task.assignees.map(user => (
                     <button
                         key={user.id}
                         onClick={() => fetchSubmission(user.id)}
-                        className={`flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium border ${
+                        className={`transition-all duration-150 px-4 py-2 rounded-lg text-sm font-medium flex flex-col items-start shadow-sm border ${
                             selectedUserId === user.id
-                                ? "bg-accent-2 text-white border-accent-2"
-                                : "bg-gray-800 text-gray-300 border-gray-600"
+                                ? "bg-indigo-600 text-white border-indigo-500 scale-[1.02]"
+                                : "bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600 hover:text-white"
                         }`}
                     >
-                        <span>{user.email.split("@")[0]}</span>
-                        {getStatusIcon(user.approved)}
+                        <span>{user.email}</span>
+                        {task.deadlineAt && (
+                            <span className="text-xs text-gray-400">
+                    Due: {new Date(task.deadlineAt).toLocaleDateString()}
+                </span>
+                        )}
                     </button>
                 ))}
             </div>
@@ -154,64 +214,128 @@ export const OwnedTaskPage: FC = () => {
             {selectedSubmission && !subLoading && (
                 <div className="space-y-8">
                     <div className="flex justify-between items-center">
-                        <h3 className="text-xl font-semibold text-white border-b border-accent-2 pb-2">
-                            {selectedUser?.email}'s submission
+                        <h3 className="text-xl font-semibold text-white">
+                            Reviewing files submitted by <span className="text-indigo-400">{selectedUser?.email}</span>
                         </h3>
-                        <Button className="bg-blue-600 hover:bg-blue-700" onClick={checkAllFiles} disabled={checking}>
-                            {checking ? "Checking..." : "Check File Categories"}
-                        </Button>
+                        <button
+                            onClick={handleCheckFiles}
+                            disabled={checking}
+                            className="bg-indigo-700 hover:bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm disabled:opacity-50"
+                        >
+                            {checking ? "Checking..." : "Check with AI"}
+                        </button>
                     </div>
 
                     {task.taskItems.map(item => {
                         const file = selectedSubmission.taskItemFiles.find(f => f.taskItemId === item.id);
                         const fileExt = file?.name?.split(".").pop() || "";
-                        const checkStatus = file ? checkResults[file.id] : null;
+                        const matchPercentage = file ? fileStatuses[file.id] : undefined;
 
                         return (
-                            <div key={item.id} className="bg-accent-1 border border-accent-2 p-6 rounded-2xl space-y-6 shadow">
-                                <div className="space-y-3">
-                                    <h2 className="text-xl font-semibold">{item.title}</h2>
+                            <div key={item.id} className="bg-gray-800 border border-gray-700 p-6 rounded-lg space-y-4">
+                                <div className="space-y-2">
+                                    <h2 className="text-lg font-semibold text-white">{item.title}</h2>
                                     <p className="text-gray-300">{item.description || "No description provided."}</p>
                                     <div className="flex flex-wrap gap-4 text-sm">
                                         {item.fileType && (
-                                            <span className="px-2 py-1 rounded bg-blue-900 border border-blue-600 text-blue-300">
+                                            <span className="px-2 py-1 rounded bg-blue-800 text-blue-200">
                                                 Type: {item.fileType.name} ({item.fileType.extension})
                                             </span>
                                         )}
                                         {item.fileCategory && (
-                                            <span className="px-2 py-1 rounded bg-green-900 border border-green-600 text-green-300">
+                                            <span className="px-2 py-1 rounded bg-green-800 text-green-200">
                                                 Category: {item.fileCategory.name}
                                             </span>
                                         )}
-                                        {file && checkStatus != null && (
-                                            <span className={`px-2 py-1 rounded border ${checkStatus ? "bg-green-800 border-green-600 text-green-300" : "bg-red-800 border-red-600 text-red-300"}`}>
-                                                Match: {checkStatus ? "✔ Success" : "✖ Failed"}
-                                            </span>
-                                        )}
                                     </div>
-
-                                    {file ? (
-                                        <div
-                                            onDoubleClick={() => setFilePreview({ open: true, file })}
-                                            className="cursor-pointer bg-gray-800 border border-gray-700 p-4 rounded-xl w-full"
-                                        >
-                                            <div className="flex items-center space-x-4">
-                                                <div className="w-12 h-12">
-                                                    <FileIcon extension={fileExt} {...defaultStyles[fileExt]} radius={4} />
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold">{file.name}</p>
-                                                    <p className="text-sm text-gray-400">{(file.size / 1024).toFixed(1)} KB</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <p className="text-sm text-gray-400">No file submitted</p>
-                                    )}
                                 </div>
+
+                                {file ? (
+                                    <div
+                                        onDoubleClick={() => setFilePreview({ open: true, file })}
+                                        className="cursor-pointer bg-gray-700 border border-gray-600 pt-4 pb-6 px-4 rounded-lg hover:border-indigo-500"
+                                    >
+                                        <div className="flex items-center space-x-4">
+                                            <div className="w-12 h-12">
+                                                <FileIcon extension={fileExt} {...defaultStyles[fileExt]} radius={4} />
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="font-medium text-white">{file.name}</p>
+                                                <p className="text-sm text-gray-400">{(file.size / 1024).toFixed(1)} KB</p>
+                                            </div>
+                                            <div className="text-sm font-semibold w-32">
+                                                {typeof matchPercentage === 'number' ? (
+                                                    <div className="space-y-1">
+                                                        <div className="text-white">{matchPercentage.toFixed(0)}% AI Approved</div>
+                                                        <div className="h-2 w-full rounded bg-gray-600 overflow-hidden">
+                                                            <div
+                                                                className="h-full rounded"
+                                                                style={{
+                                                                    width: `${matchPercentage}%`,
+                                                                    backgroundColor:
+                                                                        matchPercentage >= 80
+                                                                            ? '#16a34a'
+                                                                            : matchPercentage >= 50
+                                                                                ? '#facc15'
+                                                                                : '#dc2626'
+                                                                }}
+                                                            ></div>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-yellow-500">Unverified</span>
+                                                )}
+                                            </div>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleDownload(file.id, file.name);
+                                                }}
+                                                className="p-2 text-gray-400 hover:text-gray-200"
+                                            >
+                                                <FiDownload className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-gray-400">No file submitted</p>
+                                )}
                             </div>
                         );
                     })}
+
+                    <div className="flex items-center gap-4">
+                        <button
+                            onClick={handleApprove}
+                            className="bg-green-700 hover:bg-green-600 text-white px-5 py-2 rounded-lg text-sm"
+                        >
+                            Approve
+                        </button>
+                        <button
+                            onClick={() => setShowDenyComment(prev => !prev)}
+                            className="bg-red-700 hover:bg-red-600 text-white px-5 py-2 rounded-lg text-sm"
+                        >
+                            Disapprove
+                        </button>
+                    </div>
+
+                    {showDenyComment && (
+                        <div className="space-y-4">
+                            <TextAreaField
+                                labelText="Rejection Reason"
+                                value={denyComment}
+                                setValue={setDenyComment}
+                                placeholder="Enter reason for disapproval"
+                                rows={4}
+                            />
+                            <button
+                                onClick={handleDisapprove}
+                                className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-lg text-sm"
+                            >
+                                Submit Rejection
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -219,9 +343,20 @@ export const OwnedTaskPage: FC = () => {
                 open={filePreview.open}
                 setOpen={(open) => setFilePreview(prev => ({ ...prev, open }))}
                 fileId={filePreview.file?.id || ""}
-                fileType={filePreview.file?.fileType?.extension}
-                fileName={filePreview.file?.name}
+                fileType={filePreview.file?.name?.split('.').pop()?.toLowerCase() || ""}
+                fileName={filePreview.file?.name || "Untitled"}
             />
+
+            {selectedUser?.approved === false && selectedSubmission?.dissaproveComment && (
+                <div className="mt-8 bg-gray-800 border border-red-500/50 text-red-200 p-5 rounded-md shadow-sm">
+                    <h2 className="text-lg font-semibold mb-2 flex items-center gap-2 text-red-300">
+                        <FaTimesCircle className="text-red-400" />
+                        Submission Rejected
+                    </h2>
+                    <p className="text-sm text-red-200">You rejected this submission and gave the following reason:</p>
+                    <p className="mt-2 italic text-red-300 border-l-4 border-red-400 pl-4">{selectedSubmission.dissaproveComment}</p>
+                </div>
+            )}
         </div>
     );
 };

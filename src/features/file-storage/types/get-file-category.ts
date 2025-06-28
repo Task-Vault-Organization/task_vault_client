@@ -1,4 +1,5 @@
 export type GetFileCategory = {
     id: string,
-    name: string
+    name: string,
+    legacy?: boolean
 }

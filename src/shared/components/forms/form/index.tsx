@@ -91,7 +91,7 @@ export const Form = forwardRef<FormRef, FormProps<any>>(function Form<T extends 
                     labelText: field.label,
                     value,
                     setValue: (val: any) => setValue(field.name, val),
-                    placeholder: field.placeholder,
+                    placeholderText: field.placeholder,
                     error: errors[field.name],
                     autoFocus: field.autoFocus || false,
                 };

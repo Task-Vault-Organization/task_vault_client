@@ -2,6 +2,7 @@ import {TaskStatus} from "../../../shared/types/task-status.ts";
 import {GetTaskItem} from "./get-task-item.ts";
 import {GetTaskSubmissionUser} from "./get-task-submission-user.ts";
 import {GetAssignedTaskItem} from "./get-assigned-task-item.ts";
+import {GetUser} from "../../../shared/types/get-user.ts";
 
 export type GetAssignedTask = {
     id: string,
@@ -15,5 +16,7 @@ export type GetAssignedTask = {
     approved?: boolean,
     noComments: number,
     taskItems: GetAssignedTaskItem[],
-    assignees: GetTaskSubmissionUser[]
+    assignees: GetTaskSubmissionUser[],
+    owner?: GetUser,
+    dissaprovedComment?: string
 }

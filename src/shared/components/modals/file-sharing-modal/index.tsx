@@ -1,17 +1,15 @@
 import { FC, useEffect, useState } from "react";
-import { OutlineButton } from "../../reusable/buttons/outline-button";
 import { BaseModal } from "../base-modal";
-import { UserSearchField } from "../../reusable/search/search-users";
-import { UsersList } from "../../reusable/users/users-list";
-import { GetUser } from "../../../types/get-user.ts";
+import { useAuthenticationStore } from "../../../../features/authentication/stores/authentication-store";
+import { AuthenticationState } from "../../../../features/authentication/types/authentication-state";
 import { FileStorageApiClient } from "../../../../api/clients/file-storage-api-client";
-import { useAuthenticationStore } from "../../../../features/authentication/stores/authentication-store.ts";
-import { AuthenticationState } from "../../../../features/authentication/types/authentication-state.ts";
-import { showAlert } from "../../../helpers/alerts-helpers.ts";
-import { GetFileShareDataUserItem } from "../../../../features/file-storage/types/get-file-share-data-user-item.ts";
-import { CreateOrUpdateFileShareRequest } from "../../../../features/file-storage/types/create-or-update-file-share-request.ts";
-import { GetFile } from "../../../../features/file-storage/types/get-file.ts";
-import { FiCheck, FiClock, FiX } from "react-icons/fi";
+import { GetFile } from "../../../../features/file-storage/types/get-file";
+import { GetFileShareDataUserItem } from "../../../../features/file-storage/types/get-file-share-data-user-item";
+import { CreateOrUpdateFileShareRequest } from "../../../../features/file-storage/types/create-or-update-file-share-request";
+import { FiCheck, FiClock, FiX, FiTrash2, FiPlus } from "react-icons/fi";
+import { FormField } from "../../forms/form-field";
+import { showAlert } from "../../../helpers/alerts-helpers";
+import { CustomBgButton } from "../../reusable/buttons/custom-bg-button";
 
 interface FileSharingModalProps {
     open: boolean;
@@ -27,21 +25,17 @@ export const FileSharingModal: FC<FileSharingModalProps> = ({
     const user = useAuthenticationStore((state: AuthenticationState) => state.user);
     const [file, setFile] = useState<GetFile | null>(null);
     const [fileShareData, setFileShareData] = useState<GetFileShareDataUserItem[]>([]);
-    const [selectedUsers, setSelectedUsers] = useState<GetUser[]>([]);
-    const [loadingShare, setLoadingShare] = useState<boolean>(false);
+    const [emailInputs, setEmailInputs] = useState<string[]>([""]);
+    const [loadingShare, setLoadingShare] = useState(false);
 
     const isUploader = file?.uploaderId === user.id;
 
     useEffect(() => {
-        if (open) {
-            fetchFileDetails();
-        }
+        if (open) fetchFileDetails();
     }, [open]);
 
     useEffect(() => {
-        if (open && isUploader && file) {
-            fetchFileShareData();
-        }
+        if (open && isUploader && file) fetchFileShareData();
     }, [file, isUploader, open]);
 
     const fetchFileDetails = async () => {
@@ -62,36 +56,37 @@ export const FileSharingModal: FC<FileSharingModalProps> = ({
         }
     };
 
-    const handleUserSelect = (user: GetUser) => {
-        const alreadyShared = fileShareData.some(
-            (item) =>
-                item.userId === user.id &&
-                item.status &&
-                (item.status.id === 1 || item.status.id === 2)
-        );
-        const alreadySelected = selectedUsers.some((u) => u.id === user.id);
-
-        if (!alreadyShared && !alreadySelected) {
-            setSelectedUsers((prev) => [...prev, user]);
-        }
+    const handleEmailChange = (index: number, value: string) => {
+        const updated = [...emailInputs];
+        updated[index] = value;
+        setEmailInputs(updated);
     };
 
-    const handleUserDeselect = (userId: string) => {
-        setSelectedUsers((prev) => prev.filter((u) => u.id !== userId));
+    const handleAddEmailInput = () => {
+        setEmailInputs([...emailInputs, ""]);
+    };
+
+    const handleRemoveEmailInput = (index: number) => {
+        setEmailInputs(emailInputs.filter((_, i) => i !== index));
     };
 
     const handleShare = async () => {
-        const newUserIds = selectedUsers.map((u) => u.id);
-        const existingShareUserIds = fileShareData
-            .filter((item) => item.status == null)
-            .map((item) => item.userId);
+        const cleanedEmails = emailInputs
+            .map((email) => email.trim().toLowerCase())
+            .filter((email) => email);
 
-        const allUserIds = Array.from(new Set([...newUserIds, ...existingShareUserIds]));
+        const existingEmails = fileShareData
+            .filter((item) => item.status == null || item.status.id === 1 || item.status.id === 2)
+            .map((item) => item.userEmail.toLowerCase());
 
-        if (allUserIds.length === 0) return;
+        const newEmails = Array.from(new Set(cleanedEmails)).filter(
+            (email) => !existingEmails.includes(email)
+        );
+
+        if (newEmails.length === 0) return;
 
         const payload: CreateOrUpdateFileShareRequest = {
-            toUsers: allUserIds,
+            toUsersEmails: newEmails,
             fileId,
         };
 
@@ -99,7 +94,7 @@ export const FileSharingModal: FC<FileSharingModalProps> = ({
             setLoadingShare(true);
             const res = await FileStorageApiClient.createOrUpdateFileShareRequest(payload);
             showAlert("success", res.message || "File shared successfully.");
-            setSelectedUsers([]);
+            setEmailInputs([""]);
             fetchFileShareData();
         } catch (err) {
             console.error("Failed to share file", err);
@@ -123,76 +118,70 @@ export const FileSharingModal: FC<FileSharingModalProps> = ({
     };
 
     const renderSharedUsers = () => {
-        return [...fileShareData]
+        return fileShareData
             .filter((item) => item.status == null || item.status.id !== 2)
             .sort((a, b) => {
-                const getPriority = (statusId?: number) =>
-                    statusId === 1 ? 0 : statusId === 3 ? 2 : 1;
-                return getPriority(a.status?.id) - getPriority(b.status?.id);
+                const priority = (id?: number) => (id === 1 ? 0 : id === 3 ? 2 : 1);
+                return priority(a.status?.id) - priority(b.status?.id);
             })
-            .map((item, index: number) => {
-                const statusId = item.status?.id;
-                const isPending = statusId === 1;
-                const isDenied = statusId === 3;
-
+            .map((item, index) => {
+                const isPending = item.status?.id === 1;
+                const isDenied = item.status?.id === 3;
+                const StatusIcon = isPending ? FiClock : isDenied ? FiX : FiCheck;
+                const statusText = isPending ? "Pending" : isDenied ? "Denied" : "Shared";
                 const baseColor = isPending
                     ? "bg-accent-2/50 text-white/30"
                     : isDenied
                         ? "bg-accent-2 text-white/30"
                         : "bg-accent-2 text-white";
-
-                const overlayStyle = isPending
-                    ? "after:absolute after:inset-0 after:bg-gray-900/30 after:bg-opacity-60 after:rounded-lg"
+                const overlay = isPending
+                    ? "after:bg-gray-900/30"
                     : isDenied
-                        ? "after:absolute after:inset-0 after:bg-red-700/20 after:bg-opacity-60 after:rounded-lg"
+                        ? "after:bg-red-700/20"
                         : "";
-
-                const statusText = isPending ? "Pending" : isDenied ? "Denied" : "Shared";
-                const StatusIcon = isPending ? FiClock : isDenied ? FiX : FiCheck;
 
                 return (
                     <div
                         key={index}
-                        className={`relative flex items-center justify-between p-3 rounded-lg mb-2 ${baseColor} ${overlayStyle}`}
+                        className={`relative flex items-center justify-between p-3 rounded-lg mb-2 ${baseColor} ${overlay} after:absolute after:inset-0 after:rounded-lg z-0`}
                     >
                         <div className="flex items-center gap-3 z-10">
                             <div
-                                className={`flex ${(isDenied || isPending) && "opacity-30"} items-center justify-center w-8 h-8 rounded-full ${getColorFromEmail(item.userEmail)} text-sm font-medium`}
+                                className={`w-8 h-8 flex items-center justify-center rounded-full ${getColorFromEmail(item.userEmail)} text-sm font-medium`}
                             >
-                                {item.userEmail.charAt(0).toUpperCase()}
+                                {item.userEmail[0].toUpperCase()}
                             </div>
-                            <div className="flex flex-col">
-                                <span>{item.userEmail}</span>
-                            </div>
+                            <span>{item.userEmail}</span>
                         </div>
                         <div className="flex items-center gap-1 text-sm z-10">
-                            <StatusIcon className="w-4 h-4" aria-label={statusText} />
+                            <StatusIcon className="w-4 h-4" />
                             <span>{statusText}</span>
                         </div>
                     </div>
                 );
             });
-        };
+    };
+
+    const isFormValid = emailInputs.some((email) => {
+        const trimmed = email.trim().toLowerCase();
+        if (!trimmed) return false;
+        return !fileShareData.some(
+            (item) =>
+                item.userEmail.toLowerCase() === trimmed &&
+                (item.status?.id === 1 || item.status?.id === 2 || item.status == null)
+        );
+    });
 
     return (
         <BaseModal
             isOpen={open}
             onClose={() => {
                 setOpen(false);
-                setTimeout(() => {
-                    setSelectedUsers([]);
-                }, 500)
+                setTimeout(() => setEmailInputs([""]), 500);
             }}
-            title={file?.name || "File Share"}
+            title={<span className="text-xl font-semibold text-white">{file?.name || "Share File"}</span>}
             contentClassName="bg-accent-1 text-white"
-            footer={
-                <OutlineButton
-                    onClick={() => setOpen(false)}
-                    className="bg-gray-600 hover:bg-gray-700 text-white w-full sm:w-auto"
-                >
-                    Close
-                </OutlineButton>
-            }
+            footer={null}
         >
             {!file ? (
                 <div className="text-sm text-gray-400">Loading file info...</div>
@@ -204,50 +193,76 @@ export const FileSharingModal: FC<FileSharingModalProps> = ({
             ) : (
                 <>
                     <div className="mb-6">
-                        <h3 className="text-lg font-semibold mb-2">Search for users to share the file with</h3>
-                        <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                            <div className="flex-1">
-                                <UserSearchField
-                                    onUserSelect={handleUserSelect}
-                                    onUserDeselect={handleUserDeselect}
-                                    selectedUsers={selectedUsers}
-                                    excludedUserIds={fileShareData
-                                        .filter((item) => item.status && (item.status.id === 1 || item.status.id === 2))
-                                        .map((item) => item.userId)}
-                                    placeholder="Search users..."
-                                />
-                            </div>
-                            <OutlineButton
-                                onClick={handleShare}
-                                disabled={selectedUsers.length === 0}
-                                className={`sm:w-auto w-full ${
-                                    selectedUsers.length === 0
-                                        ? "bg-blue-600/50 text-white/50 cursor-not-allowed"
-                                        : "bg-blue-600 hover:bg-blue-700 text-white"
-                                }`}
-                                loading={loadingShare}
+                        <div className="">
+                            {emailInputs.map((email, idx) => {
+                                const normalized = email.trim().toLowerCase();
+                                const isDuplicate = normalized && emailInputs.filter(
+                                    (e) => e.trim().toLowerCase() === normalized
+                                ).length > 1;
+                                const isAlreadyShared = normalized && fileShareData.some(
+                                    (item) =>
+                                        item.userEmail.toLowerCase() === normalized &&
+                                        (item.status?.id === 1 || item.status?.id === 2 || item.status == null)
+                                );
+                                return (
+                                    <div key={idx} className="flex gap-2 items-center w-full">
+                                        <div className="flex-grow">
+                                            <FormField
+                                                value={email}
+                                                setValue={(val) => handleEmailChange(idx, val)}
+                                                labelText="Email"
+                                                type="email"
+                                                required
+                                                error={
+                                                    normalized && isDuplicate
+                                                        ? { message: "Duplicate email" }
+                                                        : isAlreadyShared
+                                                            ? { message: "Already shared" }
+                                                            : undefined
+                                                }
+                                            />
+                                        </div>
+                                        {emailInputs.length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveEmailInput(idx)}
+                                                className="text-red-400 hover:text-red-300 mt-2"
+                                            >
+                                                <FiTrash2 className="w-5 h-5" />
+                                            </button>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                            <button
+                                type="button"
+                                onClick={handleAddEmailInput}
+                                className="text-sm text-white hover:text-blue-300 flex items-center gap-1"
                             >
-                                Share
-                            </OutlineButton>
-                        </div>
-
-                        {selectedUsers.length > 0 && (
-                            <div className="mt-4">
-                                <UsersList
-                                    users={selectedUsers}
-                                    onRemoveUser={handleUserDeselect}
-                                    userRemovable={true}
-                                />
+                                <FiPlus /> Add another email
+                            </button>
+                            <div className={"mt-2"}>
+                                <CustomBgButton
+                                    onClick={handleShare}
+                                    fullWidth
+                                    loading={loadingShare}
+                                    disabled={!isFormValid}
+                                    background={isFormValid ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-600/40 cursor-not-allowed"}
+                                >
+                                    Share
+                                </CustomBgButton>
                             </div>
-                        )}
-                    </div>
 
-                    <div className="mt-4">
-                        <h3 className="text-lg font-semibold mb-3">Shared With</h3>
-                        <div className="max-h-64 overflow-y-auto pr-1 space-y-2 custom-scroll">
-                        {renderSharedUsers()}
                         </div>
                     </div>
+                    {fileShareData.some((item) => item.status == null || item.status.id !== 2) && (
+                        <div className="mt-4">
+                            <h3 className="text-lg font-semibold mb-3">Shared With</h3>
+                            <div className="max-h-64 overflow-y-auto pr-1 space-y-2 custom-scroll">
+                                {renderSharedUsers()}
+                            </div>
+                        </div>
+                    )}
                 </>
             )}
         </BaseModal>
